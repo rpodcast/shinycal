@@ -1,9 +1,12 @@
-library(reticulate)
 library(purrr)
 
-#use_python("/bin/python3.8.5")
-
+# these should not be needed now that I set the python path env var via  .Rprofile
+#reticulate::use_python("/usr/bin/python3")
+#reticulate::py_config()
 #reticulate::py_available()
+
+library(reticulate)
+
 caldav_url = 'https://nextcloud.r-podcastdev.link/remote.php/dav'
 
 caldav <- import("caldav")
@@ -21,4 +24,4 @@ per_cal_url <- "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/rpo
 wimpy_cal_url = "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/rpodcast/wimpys-world-of-streamers/"
 
 per_cal <- client$calendar(url = per_cal_url)
-per_events = per_cal$events()
+per_events <- per_cal$events()

@@ -32,16 +32,16 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends libfreetype6-dev libfontconfig1-dev tk \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* 
 
-# install R packages needed for VSCode interaction and package management
-RUN install2.r languageserver renv remotes reticulate golem crul curl httr xml2
-RUN installGithub.r nx10/httpgd dreamRs/tuicalendr
+# install R packages needed for VSCode interaction and package management 
+RUN install2.r languageserver renv remotes reticulate golem crul curl httr xml2 cachem shinyWidgets dplyr purrr ggplot2 tidyr fs glue
+RUN installGithub.r dreamRs/toastui ColinFay/brochure ColinFay/glouton
 
 # install radian via python and pip3
 RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends python3-setuptools
 
-RUN pip3 install radian caldav icalendar
+RUN pip3 install radian caldav icalendar numpy python-dotenv
 
 # install dot net core runtime for the R Tools plugin
 RUN wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb \

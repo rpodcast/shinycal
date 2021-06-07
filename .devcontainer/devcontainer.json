@@ -37,8 +37,10 @@
 		"REditorSupport.r-lsp",
 		"GrapeCity.gc-excelviewer",
 		"Mohamed-El-Fodil-Ihaddaden.shinysnip",
-		"RDebugger.r-debugger",
-		"ms-python.python"
+		"hediet.vscode-drawio",
+		"MS-vsliveshare.vsliveshare-pack",
+		"ms-python.python",
+		"RDebugger.r-debugger"
 	]
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

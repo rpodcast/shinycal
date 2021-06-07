@@ -1,6 +1,8 @@
 from datetime import datetime
 import sys
 import caldav
+import os
+from dotenv import load_dotenv
 
 #https://nextcloud.r-podcastdev.link/index.php/apps/calendar/p/zNyH2RE3pLHctoEf
 
@@ -9,11 +11,10 @@ import caldav
 #caldav_url = 'https://calendar.example.com/dav'
 caldav_url = 'https://nextcloud.r-podcastdev.link/remote.php/dav'
 
-# substitute for real user name and password (preferebly from env vars)
-username = 'rpodcast'
-password = 'mypassword'
+# load environment variables for user name and password to Nextcloud
+load_dotenv()
 
-client = caldav.DAVClient(url=caldav_url, username=username, password=password)
+client = caldav.DAVClient(url=caldav_url, username=os.getenv("NEXTCLOUD_USER"), password=os.getenv("NEXTCLOUD_PASSWORD"))
 my_principal = client.principal()
 calendars = my_principal.calendars()
 

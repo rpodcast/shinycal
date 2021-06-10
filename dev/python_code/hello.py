@@ -19,6 +19,7 @@ my_principal = client.principal()
 calendars = my_principal.calendars()
 
 wimpy_cal = "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/rpodcast/wimpys-world-of-streamers/"
+test_cal = "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/rpodcast/erics-play-calendar/"
 
 the_same_calendar = client.calendar(url=wimpy_cal)
 

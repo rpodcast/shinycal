@@ -1,0 +1,154 @@
+---
+title: "tidying_calendar"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{tidying_calendar}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+library(toastui)
+library(calendar)
+library(caldav)
+library(golem)
+library(dplyr)
+library(tidyr)
+library(clock)
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Tidying up calendar metadata
+
+In this vignette, we will explore how to tidy up the raw import of a calendar from the backend server so it meets the requirements for the `{toastui}` calendar html widget.
+
+## Required Format
+
+First we will load the built-in calendar data frame provided by `{toastui}` 
+
+```{r toastcal}
+toast_df <- toastui::cal_demo_data("month")
+dplyr::glimpse(toast_df)
+```
+
+There isn't substantial documentation on the requirements, but my best guess is the following columns are required:
+
+* `calendarId`: numeric id 
+* `title`: Event title
+* `body`: Event description
+* `recurrenceRole`: If the event is a single occurrance, this is set to `NA`, otherwise for a weekly event it should be `Every week`.  I'm not sure what the other valid values would be
+* `start`: Event start time. Format is `YYYY-MM-DD XX:YY:ZZ`
+* `end`: Event end time. Format is `YYYY-MM-DD XX:YY:ZZ`
+* `category`: Either `allday` for an all-day event, or `time` for a scheduled event not lasting the entire day
+* `location`: Location of event. If not needed, it can be `NA`
+* `bgColor`: Hex color for the event boc
+* `color`: Hex color of font?
+* `borderColor`: Hex color of border for the event box
+
+## Raw import
+
+Next we will import the raw ical calendar from the server using custom functions that wrap the `{calendar}` and `{caldav}` packages
+
+```{r rawimport}
+source("R/mod_cal_viewer_fct_helpers.R")
+source("R/app_config.R")
+raw_df <- import_cal() %>%
+  mutate(uid = UID)
+```
+
+```{r rawexplore}
+dplyr::glimpse(raw_df)
+```
+
+We see that there is a fair bit of cleanup to do. A summary of issues that need to be solved:
+
+* There are multiple pairs of event start and end times, one pair for each time zone used when making events in the calendar. We need a way to keep only the pair with non-missing data and record the time zone used
+* The timestamp format is much different. An example is `20210514T210000`
+* `RRULE` looks similar in spirit to `recurrenceRole` but the values are different. Example is `FREQ=WEEKLY;BYDAY=WE;UNTIL=20210824T220000Z` and `FREQ=WEEKLY;BYDAY=TH`
+* Unclear what `SEQUENCE` does. The values are integers in character format.
+
+## Let the tidying begin
+
+We will first tackle the multiple start and end times issue. I think the following approach should work:
+
+1. Grab all columns that begin with `DTSTART` or `DTEND`
+1. Create a unique ID column for row index to server as a unique identifier
+1. Transpose to a long format
+1. Strip out the time zone information from the time values and make them a separate column. It looks like we should be able to split by `;`
+1. Make the data wide again with column names `id`, `start`, `end`, and `timezone`
+
+```{r dttyding}
+dt_df <- raw_df %>%
+  select(uid, starts_with("DTSTART"), starts_with("DTEND")) %>%
+  tidyr::pivot_longer(!uid, names_to = c("dt_type", "timezone"), names_sep = ";", values_to = "time") %>%
+  filter(!is.na(time)) %>%
+  tidyr::pivot_wider(names_from = c(dt_type), values_from = time)
+  #mutate(timezone = stringr::str_remove_all(timezone, "TZID="))
+
+```
+
+That worked fairly well!  Now we need to conform the start and end column values to match the string format used in `{toastui}`. Recall the raw and desired formats:
+
+**Raw**: `"20210514T210000"`
+**Final**: `"2021-05-14 21:00:00"`
+
+We will use the `{clock}` package to parse the raw formats (while incorporating time zones) and then get the desired formatting
+
+```{r clock_exp}
+# experiment with clock package
+x <- "20210514T210000"
+x_zone <- "Europe/Zurich"
+
+y <- date_time_parse(x, zone = x_zone, format = "%Y%m%dT%H%M%S")
+y
+
+# the character version
+as.character(y)
+```
+
+Looks great! Now let's apply that to the processed data frame
+
+```{r apply_date_format}
+time_parser <- function(x, zone, format = "%Y%m%dT%H%M%S") {
+  as.character(clock::date_time_parse(x, zone, format = format))
+}
+
+dt_df2 <- dt_df %>%
+  mutate(
+    timezone = stringr::str_remove_all(timezone, "TZID="),
+    start = purrr::map2_chr(DTSTART, timezone, ~time_parser(.x, .y)),
+    end =  purrr::map2_chr(DTEND, timezone, ~time_parser(.x, .y))) %>%
+  select(uid, start, end, timezone)
+
+dplyr::glimpse(dt_df2)
+```
+
+Now we tackle the recurrence rule coding
+
+```{r recurrance}
+rec_df <- raw_df %>%
+  mutate(recurrenceRule = case_when(
+    stringr::str_detect(RRULE, "FREQ=WEEKLY") ~ "Every week",
+    TRUE ~ RRULE
+  )) %>%
+  select(uid, recurrenceRule)
+
+```
+
+I think we have what we need, so let's put this all together
+
+```{r final_polish}
+final_df <- raw_df %>%
+  select(uid, title = SUMMARY, body = DESCRIPTION, location = LOCATION) %>%
+  left_join(dt_df2, by = "uid") %>%
+  left_join(rec_df, by = "uid")
+
+
+toastui::calendar(
+  data = final_df
+)
+```

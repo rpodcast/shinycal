@@ -33,7 +33,7 @@ RUN apt-get update \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* 
 
 # install R packages needed for VSCode interaction and package management 
-RUN install2.r languageserver renv remotes reticulate golem crul curl httr xml2 cachem shinyWidgets dplyr purrr ggplot2 tidyr fs glue calendar devtools rmarkdown
+RUN install2.r languageserver renv remotes reticulate golem crul curl httr xml2 cachem shinyWidgets dplyr purrr ggplot2 tidyr fs glue calendar devtools rmarkdown clock
 RUN installGithub.r dreamRs/toastui ColinFay/brochure ColinFay/glouton petermeissner/caldav
 
 # install radian via python and pip3

@@ -18,3 +18,7 @@ LazyData: true
 RoxygenNote: 7.1.1
 URL: https://github.com/rpodcast/shinycal
 BugReports: https://github.com/rpodcast/shinycal/issues
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

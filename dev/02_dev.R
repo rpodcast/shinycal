@@ -48,7 +48,7 @@ usethis::use_test( "app" )
 # Documentation
 
 ## Vignette ----
-usethis::use_vignette("shinycal")
+usethis::use_vignette("tidying_calendar")
 devtools::build_vignettes()
 
 ## Code Coverage----

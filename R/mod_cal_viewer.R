@@ -30,17 +30,17 @@ mod_cal_viewer_server <- function(id, cal_df){
       
       # process cal_df to conform to the proper structure
       # coalesce(contains(dtstart()))
+
+      # `YYYY-MM-DD XX:YY:ZZ`
       
-      # cal_sub <- cal_df %>%
-      #   dplyr::select(title = SUMMARY, body = DESCRIPTION, 
-      #                 recurrenceRule = RRULE,
-      #                 start = `DTSTART;TZID=Europe/Zurich`,
-      #                 end = `DTEND;TZID=Europe/Zurich`,
-      #                 location = LOCATION)
+      cal_sub <- cal_df %>%
+        mutate(start_clock = as_naive_time(start_clock), end_clock = as_naive_time(end_clock)) %>%
+        mutate(start = as.character(start_clock), end = as.character(end_clock)) %>%
+        select(., -start_clock, -end_clock)
       
       toastui::calendar(
-        toastui::cal_demo_data(), 
-        #cal_sub,
+        #toastui::cal_demo_data(), 
+        cal_sub,
         useNavigation = TRUE
       ) %>%
         cal_props(

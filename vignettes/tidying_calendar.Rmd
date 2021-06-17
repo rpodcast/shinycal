@@ -136,7 +136,8 @@ dt_df2 <- dt_df %>%
     end_clock =  purrr::map2(DTEND, timezone, ~time_parser(.x, .y)),
     #end = as.character(end_clock)
   ) %>%
-  select(uid, start_clock, end_clock, timezone)
+  select(uid, start_clock, end_clock, timezone) %>%
+  tidyr::unnest(cols = c(start_clock, end_clock))
 
 dplyr::glimpse(dt_df2)
 ```
@@ -157,7 +158,7 @@ I think we have what we need, so let's put this all together
 
 ```{r final_polish}
 final_df <- raw_df %>%
-  select(uid, title = SUMMARY, body = DESCRIPTION, location = LOCATION) %>%
+  select(uid, title = SUMMARY, location = LOCATION) %>%
   left_join(dt_df2, by = "uid") %>%
   left_join(rec_df, by = "uid")
 ```
@@ -166,6 +167,13 @@ Now let's see what happens when we view the times according to a particular time
 
 ```{r timeplay}
 final_df2 <- final_df %>%
-  mutate(start_clock = purrr::map(start_clock, ~zoned_time_set_zone(.x, "America/New_York"),
-         end_clock = purrr::map(end_clock, ~zoned_time_set_zone(.x, "America/New_York"))))
+  mutate(start_clock = zoned_time_set_zone(start_clock, "Europe/Zurich"),
+         end_clock = zoned_time_set_zone(end_clock, "Europe/Zurich"))
+```
+
+Let's give the backend function a try
+
+```{r backendfnct}
+source("R/mod_cal_viewer_fct_helpers.R")
+df8 <- process_cal(raw_df)
 ```

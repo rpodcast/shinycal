@@ -6,8 +6,11 @@
 #' @export
 #' @import caldav
 #' @importFrom calendar ic_read ical
-import_cal <- function(cal_slug = "wimpys-world-of-streamers") {
-  cal_base_url <- get_golem_config("cal_base_url")
+import_cal <- function(cal_slug = "wimpys-world-of-streamers", cal_base_url = NULL) {
+  if (is.null(cal_base_url)) {
+    cal_base_url <- get_golem_config("cal_base_url")
+  }
+  
   caldav_url = glue::glue("{cal_base_url}/{cal_slug}")
   cal_data <- 
     caldav::caldav_get_all_simple_auth(

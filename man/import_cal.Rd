@@ -4,7 +4,7 @@
 \alias{import_cal}
 \title{Import calendar directly from server}
 \usage{
-import_cal(cal_slug = "wimpys-world-of-streamers")
+import_cal(cal_slug = "wimpys-world-of-streamers", cal_base_url = NULL)
 }
 \arguments{
 \item{cal_slug}{string for URL slug of calendar.}

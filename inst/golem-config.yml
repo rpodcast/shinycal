@@ -3,7 +3,7 @@ default:
   golem_version: 0.0.0.9000
   app_prod: no
   cal_host: "nextcloud.r-podcastdev.link"
-  cal_base_url: "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/rpodcast"
+  cal_base_url: "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/shinycal"
 production:
   app_prod: yes
 dev:

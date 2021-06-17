@@ -31,16 +31,16 @@ mod_cal_viewer_server <- function(id, cal_df){
       # process cal_df to conform to the proper structure
       # coalesce(contains(dtstart()))
       
-      cal_sub <- cal_df %>%
-        dplyr::select(title = SUMMARY, body = DESCRIPTION, 
-                      recurrenceRule = RRULE,
-                      start = `DTSTART;TZID=Europe/Zurich`,
-                      end = `DTEND;TZID=Europe/Zurich`,
-                      location = LOCATION)
+      # cal_sub <- cal_df %>%
+      #   dplyr::select(title = SUMMARY, body = DESCRIPTION, 
+      #                 recurrenceRule = RRULE,
+      #                 start = `DTSTART;TZID=Europe/Zurich`,
+      #                 end = `DTEND;TZID=Europe/Zurich`,
+      #                 location = LOCATION)
       
       toastui::calendar(
-        #toastui::cal_demo_data(), 
-        cal_sub,
+        toastui::cal_demo_data(), 
+        #cal_sub,
         useNavigation = TRUE
       ) %>%
         cal_props(

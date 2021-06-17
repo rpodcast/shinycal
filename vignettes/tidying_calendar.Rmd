@@ -56,7 +56,9 @@ Next we will import the raw ical calendar from the server using custom functions
 ```{r rawimport}
 source("R/mod_cal_viewer_fct_helpers.R")
 source("R/app_config.R")
-raw_df <- import_cal() %>%
+cal_slug <- "data-science-streams"
+cal_base_url <- "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/shinycal"
+raw_df <- import_cal(cal_slug = cal_slug, cal_base_url = cal_base_url) %>%
   mutate(uid = UID)
 ```
 
@@ -103,26 +105,38 @@ We will use the `{clock}` package to parse the raw formats (while incorporating 
 x <- "20210514T210000"
 x_zone <- "Europe/Zurich"
 
-y <- date_time_parse(x, zone = x_zone, format = "%Y%m%dT%H%M%S")
+y <- date_time_parse(x, zone = x_zone, format = "%Y%m%dT%H%M%S") %>%
+  as_naive_time() %>%
+  as_zoned_time(., x_zone)
 y
 
 # the character version
-as.character(y)
+#as.character(y)
 ```
 
 Looks great! Now let's apply that to the processed data frame
 
 ```{r apply_date_format}
-time_parser <- function(x, zone, format = "%Y%m%dT%H%M%S") {
-  as.character(clock::date_time_parse(x, zone, format = format))
+time_parser <- function(x, zone, format = "%Y%m%dT%H%M%S", convert_to_char = FALSE) {
+  x <- clock::date_time_parse(x, zone, format = format) %>%
+    as_naive_time() %>%
+    as_zoned_time(., zone)
+  
+  if (convert_to_char) {
+    x <- as.character(x)
+  }
+  return(x)
 }
 
 dt_df2 <- dt_df %>%
   mutate(
     timezone = stringr::str_remove_all(timezone, "TZID="),
-    start = purrr::map2_chr(DTSTART, timezone, ~time_parser(.x, .y)),
-    end =  purrr::map2_chr(DTEND, timezone, ~time_parser(.x, .y))) %>%
-  select(uid, start, end, timezone)
+    start_clock = purrr::map2(DTSTART, timezone, ~time_parser(.x, .y)),
+    #start = as.character(start_clock),
+    end_clock =  purrr::map2(DTEND, timezone, ~time_parser(.x, .y)),
+    #end = as.character(end_clock)
+  ) %>%
+  select(uid, start_clock, end_clock, timezone)
 
 dplyr::glimpse(dt_df2)
 ```
@@ -146,9 +160,12 @@ final_df <- raw_df %>%
   select(uid, title = SUMMARY, body = DESCRIPTION, location = LOCATION) %>%
   left_join(dt_df2, by = "uid") %>%
   left_join(rec_df, by = "uid")
+```
 
+Now let's see what happens when we view the times according to a particular time zone
 
-toastui::calendar(
-  data = final_df
-)
+```{r timeplay}
+final_df2 <- final_df %>%
+  mutate(start_clock = purrr::map(start_clock, ~zoned_time_set_zone(.x, "America/New_York"),
+         end_clock = purrr::map(end_clock, ~zoned_time_set_zone(.x, "America/New_York"))))
 ```

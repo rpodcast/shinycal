@@ -4,24 +4,19 @@
 # shinycal
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of shinycal is to …
 
 ## Installation
 
-You can install the released version of shinycal from
-[CRAN](https://CRAN.R-project.org) with:
+You can install the development version from
+[GitHub](https://github.com/) with:
 
 ``` r
-install.packages("shinycal")
-```
-
-And the development version from [GitHub](https://github.com/) with:
-
-``` r
-# install.packages("devtools")
-devtools::install_github("rpodcast/shinycal")
+# install.packages("remotes")
+remotes::install_github("rpodcast/shinycal")
 ```
 
 ## Code of Conduct

@@ -13,7 +13,8 @@ Imports:
     pkgload,
     purrr,
     shiny (>= 1.6.0),
-    clock
+    clock,
+    shinylogs
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1

@@ -1,3 +1,45 @@
+#' @importFrom twitchr get_users
+#' @noRd 
+get_twitch_id <- function(user_name) {
+  user <- get_users(login = user_name)
+  return(user$id)
+}
+
+
+get_twitch_schedule <- function(id) {
+  r <- httr::GET("https://api.twitch.tv/helix/schedule", query = list(broadcaster_id = id))
+  status <- httr::status_code(r)
+
+  if (status != 200) {
+    warning(glue::glue("There was a problem with user {id} (status code {status})"))
+    return(NULL)
+  }
+  
+  res <- httr::content(r, "parsed") %>%
+    purrr::pluck("data", "segments")
+
+  res_final <- tibble::tibble(res) %>%
+    tidyr::unnest_wider(1) %>%
+    dplyr::select(start_time, end_time, title, is_recurring)
+
+  return(res_final)
+}
+
+get_twitch_videos <- function(id) {
+  videos <- twitchr::get_videos(user_id = id, first = 100) 
+
+  videos_play <- videos$data %>%
+    #tibble() %>%
+    dplyr::mutate(video_id = purrr::map_chr(url, ~{
+      tmp <- stringr::str_split(.x, "/")
+      n_items <- length(tmp[[1]])
+      res <- tmp[[1]][n_items]
+      return(res)
+    }))
+
+  return(videos_play)
+}
+
 #' Import calendar directly from server
 #'
 #' @param cal_slug string for URL slug of calendar.
@@ -75,7 +117,8 @@ process_cal <- function(raw_df) {
     mutate(uid = UID) %>%
     select(uid, title = SUMMARY, location = LOCATION) %>%
     left_join(dt_df2, by = "uid") %>%
-    left_join(rec_df, by = "uid")
+    left_join(rec_df, by = "uid") %>%
+    mutate(raw = uid)
 
   return(final_df)
 }

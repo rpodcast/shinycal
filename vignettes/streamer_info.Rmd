@@ -1,0 +1,183 @@
+---
+title: "streamer_info"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{streamer_info}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Obtaining metadata associated with streamers
+
+The goal of this vignette is to illustrate how we can get interesting metadata associated with each streamer via the Twitch and YouTube APIs. 
+
+## Setup
+
+```{r setup}
+library(twitchr)
+library(httr)
+library(calendar)
+library(caldav)
+library(dplyr)
+library(yaml)
+```
+
+## Twitch streamer metadata
+
+```{r twitchauth}
+# set up authentication via environment variables
+twitch_auth()
+```
+
+Authentication is successful!  Now let's experiment with the functions in the `twitchr` package, as well as custom explorations of obtaining a streamer's calendar via the Twitch API directly, see docs [here](https://dev.twitch.tv/docs/api/reference/#get-channel-icalendar)
+
+
+## Obtain streamer YAML file data
+
+```{r yamlparsing}
+yml_file <- "prototyping/streamers.yml"
+yml_data <- yaml::read_yaml(file = yml_file)
+
+get_twitch_id <- function(user_name) {
+  user <- get_users(login = user_name)
+  return(user$id)
+}
+
+get_twitch_schedule <- function(id) {
+  r <- httr::GET("https://api.twitch.tv/helix/schedule", query = list(broadcaster_id = id))
+  status <- status_code(r)
+
+  if (status != 200) {
+    warning(glue::glue("There was a problem with user {id} (status code {status})"))
+    return(NULL)
+  }
+  
+  res <- content(r, "parsed") %>%
+    purrr::pluck("data", "segments")
+
+  res_final <- tibble(res) %>%
+    tidyr::unnest_wider(1) %>%
+    select(start_time, end_time, title, is_recurring)
+
+  return(res_final)
+}
+
+get_twitch_videos <- function(id) {
+  videos <- get_videos(user_id = id, first = 100) 
+
+  videos_play <- videos$data %>%
+    #tibble() %>%
+    mutate(video_id = purrr::map_chr(url, ~{
+      tmp <- stringr::str_split(.x, "/")
+      n_items <- length(tmp[[1]])
+      res <- tmp[[1]][n_items]
+      return(res)
+    }))
+
+  return(videos_play)
+}
+
+streamer_data <- tibble(yml_data$streamers) %>%
+  tidyr::unnest_wider(1) %>%
+  filter(platform == "twitch") %>%
+  mutate(id = purrr::map_chr(user_id, ~get_twitch_id(user_name = .x))) %>%
+  mutate(schedule_data = purrr::map(id, ~get_twitch_schedule(.x)),
+         videos_data = purrr::map(id, ~get_twitch_videos(.x)))
+
+
+purrr::walk(yml_data$streamers, ~{
+  platform <- .x$platform
+  if (platform == "youtube") {
+    # do nothing
+  } else {
+    # grab user ID
+    user_id <- .x$user_id
+
+    # grab schedule data
+    r <- httr::GET("https://api.twitch.tv/helix/schedule", query = list(broadcaster_id = user$id))
+status_code(r)
+
+res2 <- content(r, "parsed")
+  }
+})
+
+```
+### Import calendar
+
+```{r caltry}
+
+user <- get_users(login = "aftonsteps")
+
+r <- httr::GET("https://api.twitch.tv/helix/schedule/icalendar", query = list(broadcaster_id = user$id))
+status_code(r)
+x <- content(r, "text")
+
+res <- withr::with_tempfile("tf", {
+  cat(x, file = tf)
+  ic_read(tf)
+})
+```
+
+### Import stream schedule
+
+```{r schedule}
+r <- httr::GET("https://api.twitch.tv/helix/schedule", query = list(broadcaster_id = user$id))
+status_code(r)
+
+res2 <- content(r, "parsed")
+```
+
+### Import additional metadata
+
+```{r other-meta}
+videos <- get_videos(user_id = user$id, first = 100) 
+
+videos_play <- videos$data %>%
+  tibble() %>%
+  mutate(video_id = purrr::map_chr(url, ~{
+    tmp <- stringr::str_split(.x, "/")
+    n_items <- length(tmp[[1]])
+    res <- tmp[[1]][n_items]
+    return(res)
+  }))
+
+videos_df <- videos$data %>%
+  mutate(video_id = purrr::map_chr(url, ~{
+    tmp <- stringr::str_split(.x, "/")
+    n_items <- length(tmp[[1]])
+    res <- tmp[[1]][n_items]
+    return(res)
+  }))
+
+# video id 1060733999
+followers <- get_follows(to_id = user$id, first = 100)
+followers_df <- followers$data
+
+```
+
+## YouTube stream metadata
+
+```{r youtube}
+channel_id <- "UCeiiqmVK07qhY-wvg3IZiZQ"
+part <- "liveStreamingDetails"
+part <- "snippet,contentDetails"
+part <- "snippet,contentDetails,liveStreamingDetails"
+#base_url <- "https://www.googleapis.com/youtube/v3/channels"
+base_url <- "https://www.googleapis.com/youtube/v3/liveBroadcasts"
+base_url <- "https://www.googleapis.com/youtube/v3/videos"
+yt_request <- httr::GET(base_url,
+                        query = list(key = Sys.getenv("YOUTUBE_API_KEY"),
+                                     id = channel_id,
+                                     part = part))
+
+status_code(yt_request)
+
+res3 <- content(yt_request, "parsed")
+```

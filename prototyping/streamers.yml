@@ -1,0 +1,75 @@
+streamers:
+  aftonsteps:
+    user_id: aftonsteps
+    name: Afton Coombs
+    twitter_id: aftonsteps
+    platform: twitch
+    categories:
+      - r
+      - datascience
+      - shiny
+  tan_ho_:
+    user_id: tanho_
+    name: Tan Ho
+    twitter_id: _TanHo
+    platform: twitch
+    categories:
+      - r
+      - datascience
+      - shiny
+      - sports
+  kierisi:
+    user_id: kierisi
+    name: Jesse Mostipak
+    twitter_id: kierisi
+    platform: twitch
+    categories:
+      - r
+      - datascience
+      - gaming
+  rpodcast:
+    user_id: rpodcast
+    name: Eric Nantz
+    twitter_id: thercast
+    platform: twitch
+    categories:
+      - r
+      - datascience
+      - shiny
+      - linux
+  moriah_streamR:
+    user_id: moriah_streamR
+    name: Moriah Taylor
+    twitter_id: moriah_taylor58
+    platform: twitch
+    categories:
+      - r
+      - datascience
+  alyssa_longmuir:
+    user_id: aklongmuir
+    name: Alyssa Longmuir
+    twitter_id: alyssastweeting
+    platform: twitch
+    categories:
+      - r
+      - datascience
+      - sports
+  nick_wan:
+    user_id: nickwan_datasci
+    name: Nick Wan
+    twitter_id: nickwan
+    platform: twitch
+    categories:
+      - python
+      - datascience
+      - gaming
+  david_robinson:
+    user_id: UCeiiqmVK07qhY-wvg3IZiZQ
+    name: David Robinson
+    twitter_id: drob
+    platform: youtube
+    categories:
+      - r
+      - datascience
+  
+

@@ -49,6 +49,8 @@ usethis::use_test( "app" )
 
 ## Vignette ----
 usethis::use_vignette("tidying_calendar")
+usethis::use_vignette("streamer_info")
+
 devtools::build_vignettes()
 
 ## Code Coverage----

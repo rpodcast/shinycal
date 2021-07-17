@@ -2,3 +2,4 @@ NEXTCLOUD_USER="username"
 NEXTCLOUD_PASSWORD="mypassword"
 TWITCH_CLIENT_ID=aaaaaaaaaaa
 TWITCH_SECRET=bbbbbbbbbbbbbbbbbbb
+YOUTUBE_API_KEY=hhhhhhhhhhhhhhhhhhhhhhhhh

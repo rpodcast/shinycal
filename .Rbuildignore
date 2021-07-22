@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^LICENSE\.md$
 ^.*\.Rproj$
 ^\.Rproj\.user$
@@ -5,3 +7,4 @@
 ^CODE_OF_CONDUCT\.md$
 ^app\.R$
 ^rsconnect$
+^data-raw$

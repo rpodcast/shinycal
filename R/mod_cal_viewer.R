@@ -18,9 +18,9 @@ mod_cal_viewer_ui <- function(id){
         uiOutput(ns("vid"))
       ),
       col_4(
-        h2("More Info Here"),
-        textInput(ns("blah"), "Enter something"),
-        verbatimTextOutput(ns("last_changed"))
+        h2("More Info Here")
+        #textInput(ns("blah"), "Enter something"),
+        #verbatimTextOutput(ns("last_changed"))
       )
     )
   )
@@ -29,21 +29,33 @@ mod_cal_viewer_ui <- function(id){
 #' cal_viewer Server Functions
 #'
 #' @noRd 
-mod_cal_viewer_server <- function(id, cal_df){
+mod_cal_viewer_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    cal_df <- streamer_data
 
-    observeEvent(input$calui_click, {
-      message("hello")
+    # reactive value for clicked schedule item
+    schedule_click <- reactiveVal(NULL)
+
+    observeEvent(input$fancy, {
+      schedule_click(input$fancy)
     })
 
     output$vid <- renderUI({
+      req(cal_sub())
+      req(schedule_click())
+
+      video_id <- cal_sub() %>%
+        dplyr::filter(id == schedule_click()$id) %>%
+        tidyr::unnest(cols = videos_data) %>%
+        dplyr::pull(videos_data)
+
       js_snippet <- glue::glue("
       <script type='text/javascript'>
           var options = {
             width: '800',
             height: '600',
-            video: '1060733999',
+            video: '<<<video_id>>>',
             autoplay: false
             //parent: 'localhost'
           };
@@ -56,8 +68,8 @@ mod_cal_viewer_server <- function(id, cal_df){
       
       tags$div(
         id = ns("testvid"),
-        h2("vid was here")
-        #htmltools::HTML(js_snippet)
+        #h2("vid was here")
+        htmltools::HTML(js_snippet)
       )
     })
 
@@ -81,27 +93,40 @@ mod_cal_viewer_server <- function(id, cal_df){
       # _update
       # _dates
     })
+
+    cal_sub <- reactive({
+      cal_sub <- cal_df %>%
+              tidyr::unnest(schedule_data) %>%
+              mutate(calendarId = 1) %>%
+              mutate(id = seq_len(dplyr::n())) %>%
+              mutate(start = as.character(start), end = as.character(end)) %>%
+              mutate(raw = map2(title, categories, ~list(title = .x, categories = .y)))
+
+        return(cal_sub)
+    })
     
     output$calui <- renderCalendar({
-      
+      req(cal_sub())
+
+      cal_sub2 <- cal_sub() %>%
+        select(., -videos_data, -start_time, -end_time, -category)
       # process cal_df to conform to the proper structure
       # coalesce(contains(dtstart()))
 
       # `YYYY-MM-DD XX:YY:ZZ`
       
       my_id <- ns("fancy")
-      
-      # TODO: Change this to use the streamer_data frame
 
-      cal_sub <- cal_df %>%
-        mutate(start_clock = as_naive_time(start_clock), end_clock = as_naive_time(end_clock)) %>%
-        mutate(start = as.character(start_clock), end = as.character(end_clock)) %>%
-        select(., -start_clock, -end_clock)
+      
+        #tidyr::nest(raw = c(title, categories))
+        
       
       toastui::calendar(
         #toastui::cal_demo_data(), 
-        cal_sub,
-        useNavigation = TRUE
+        cal_sub(),
+        view = "week",
+        useNavigation = TRUE,
+        useDetailPopup = FALSE,
       ) %>%
         cal_props(
           list(
@@ -126,12 +151,59 @@ mod_cal_viewer_server <- function(id, cal_df){
           # - body
           # - title
           cal = .,
-          clickSchedule = JS(glue::glue('function(event) {console.log(event.schedule.id); Shiny.setInputValue("<<my_id>>", event.schedule.raw);}', .open = "<<", .close = ">>"))
+          clickSchedule = JS(glue::glue('function(event) {console.log(event.schedule.id); Shiny.setInputValue("<<my_id>>", {raw: event.schedule.raw, id: event.schedule.id, x: event.event.clientX, y: event.event.clientY});}', .open = "<<", .close = ">>"))
           #clickSchedule = JS("function(event) {alert(event.schedule.id);}")
         )
     })
- 
+
+    observeEvent(input$fancy, {
+      removeUI(selector = "#custom_popup")
+      id <- as.numeric(input$fancy$id)
+      # Get the appropriate line clicked
+      sched <- cal_sub()[cal_sub()$id == id, ]
+
+      insertUI(
+        selector = "body",
+        ui = absolutePanel(
+          id = ns("custom_popup"),
+          top = input$fancy$y,
+          left = input$fancy$x, 
+          draggable = FALSE,
+          width = "300px",
+          tags$div(
+            style = "background: #FFF; padding: 10px; box-shadow: 0px 0.2em 0.4em rgb(0, 0, 0, 0.8); border-radius: 5px;",
+            actionLink(
+              inputId = "close_calendar_panel", 
+              label = NULL, 
+              icon = icon("close"), 
+              style = "position: absolute; top: 5px; right: 5px;"
+            ),
+            tags$br(),
+            tags$div(
+              style = "text-align: center;",
+              tags$p(
+                "Here you can put custom", tags$b("HTML"), "elements."
+              ),
+              tags$p(
+                "You clicked on schedule", sched$id, 
+                "starting from", sched$start,
+                "ending", sched$end
+              ),
+              tags$p(
+                "Categories", list_to_li(sched$raw[[1]]$categories)
+              )
+            )
+          )
+        )
+    )
+    })
+
+    observeEvent(input$close_calendar_panel, {
+      removeUI(selector = glue::glue("#{x}", x = ns("custom_popup")))
+    })
   })
+
+
 }
     
 ## To be copied in the UI

@@ -2,8 +2,10 @@
 #' @noRd 
 get_twitch_id <- function(user_name) {
   user <- get_users(login = user_name)
+  message(glue::glue("user_name: {user_name} - id: {x}", x = user$id))
   return(user$id)
 }
+
 
 
 get_twitch_schedule <- function(id) {
@@ -16,17 +18,45 @@ get_twitch_schedule <- function(id) {
   }
   
   res <- httr::content(r, "parsed") %>%
-    purrr::pluck("data", "segments")
+    purrr::pluck("data", "segments") %>%
+    tibble::tibble() %>%
+    tidyr::unnest_wider(1)
 
-  res_final <- tibble::tibble(res) %>%
-    tidyr::unnest_wider(1) %>%
-    dplyr::select(start_time, end_time, title, is_recurring)
+  res_final <- res %>%
+    mutate(start = purrr::map(start_time, ~time_parser(.x)),
+           end = purrr::map(end_time, ~time_parser(.x)),
+           category = "time",
+           recurrenceRule = "Every week") %>%
+    dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule) %>%
+    tidyr::unnest(cols = c(start, end))
 
   return(res_final)
 }
 
+
 get_twitch_videos <- function(id) {
+  message(glue::glue("twitch id {id}"))
   videos <- twitchr::get_videos(user_id = id, first = 100) 
+
+  if (is.null(videos)) {
+    # try getting clips instead
+    videos <- twitchr::get_all_clips(broadcaster_id = id)
+    if (is.null(videos)) {
+      warning(glue::glue("There are no videos for user {id}"))
+      return(NA)
+    } else {
+      videos_play <- videos %>%
+        dplyr::mutate(video_id = purrr::map_chr(url, ~{
+          tmp <- stringr::str_split(.x, "/")
+          n_items <- length(tmp[[1]])
+          res <- tmp[[1]][n_items]
+          return(res)
+        })) %>%
+        dplyr::slice(1) %>%
+        dplyr::pull(video_id)
+      return(videos_play)
+    }
+  }
 
   videos_play <- videos$data %>%
     #tibble() %>%
@@ -35,10 +65,13 @@ get_twitch_videos <- function(id) {
       n_items <- length(tmp[[1]])
       res <- tmp[[1]][n_items]
       return(res)
-    }))
+    })) %>%
+    dplyr::slice(1) %>%
+    dplyr::pull(video_id)
 
   return(videos_play)
 }
+
 
 #' Import calendar directly from server
 #'
@@ -71,10 +104,16 @@ import_cal <- function(cal_slug = "wimpys-world-of-streamers", cal_base_url = NU
   return(res)
 }
 
-time_parser <- function(x, zone, format = "%Y%m%dT%H%M%S", convert_to_char = FALSE) {
-  x <- clock::date_time_parse(x, zone, format = format) %>%
-    clock::as_naive_time() %>%
-    clock::as_zoned_time(., zone)
+time_parser <- function(x, zone = "America/New_York", format = "%Y-%m-%dT%H:%M:%SZ", convert_to_char = FALSE) {
+  # was format = "%Y%m%dT%H%M%S" for ical
+
+  x <- clock::date_time_parse(x, zone, format = format)
+    # clock::as_naive_time() %>%
+    # clock::as_zoned_time(., zone)
+
+  # x <- clock::date_time_parse(x, zone, format = format) %>%
+  #   clock::as_naive_time() %>%
+  #   clock::as_zoned_time(., zone)
   
   if (convert_to_char) {
     x <- as.character(x)

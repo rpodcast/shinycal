@@ -1,0 +1,32 @@
+---
+title: "vscode debug"
+output: html_document
+---
+
+## Obtaining metadata associated with streamers
+
+The goal of this vignette is to illustrate how we can get interesting metadata associated with each streamer via the Twitch and YouTube APIs. 
+
+## Setup
+
+```{r setup, include = FALSE}
+library(twitchr)
+library(httr)
+library(calendar)
+library(caldav)
+library(dplyr)
+library(yaml)
+
+print(getwd())
+print(here::here())
+readRenviron(".Renviron")
+```
+
+## Twitch streamer metadata
+
+Hello during my stream
+
+```{r twitchauth, eval=TRUE}
+# set up authentication via environment variables
+twitch_auth()
+```

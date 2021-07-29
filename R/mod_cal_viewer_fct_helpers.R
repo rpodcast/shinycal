@@ -1,9 +1,11 @@
 #' @importFrom twitchr get_users
+#' @importFrom dplyr filter
 #' @noRd 
 get_twitch_id <- function(user_name) {
   user <- get_users(login = user_name)
   message(glue::glue("user_name: {user_name} - id: {x}", x = user$id))
-  return(user$id)
+  res <- dplyr::select(user, id, description, profile_image_url)
+  return(res)
 }
 
 

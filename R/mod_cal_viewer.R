@@ -13,7 +13,7 @@ mod_cal_viewer_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
-      col_8(
+      col_12(
         radioButtons(
           ns("cal_view"),
           label = "View Type",
@@ -23,11 +23,6 @@ mod_cal_viewer_ui <- function(id){
         ),
         calendarOutput(ns("calui")),
         uiOutput(ns("vid"))
-      ),
-      col_4(
-        h2("More Info Here")
-        #textInput(ns("blah"), "Enter something"),
-        #verbatimTextOutput(ns("last_changed"))
       )
     )
   )
@@ -175,6 +170,9 @@ mod_cal_viewer_server <- function(id){
       # Get the appropriate line clicked
       sched <- cal_sub()[cal_sub()$id == id, ]
 
+      start_time <- lubridate::as_datetime(sched$start) %>% hms::as_hms()  
+      end_time <- lubridate::as_datetime(sched$end) %>% hms::as_hms()  
+
       insertUI(
         selector = "body",
         #selector = paste0("#", ns("add")),
@@ -194,12 +192,13 @@ mod_cal_viewer_server <- function(id){
             ),
             tags$br(),
             tags$div(
-              style = "text-align: center;",
+              style = "text-align: left;",
               tags$p(
-                "You clicked on schedule", sched$id, 
-                "starting from", sched$start,
-                "ending", sched$end,
-                "by", sched$user_id
+                glue::glue("{user_id} is streaming from {start_time} to {end_time}",
+                  user_id = sched$user_id)
+              ),
+              tags$p(
+                sched$description,
               ),
               tags$p(
                 "Categories", list_to_li(sched$raw[[1]]$categories)

@@ -104,21 +104,19 @@ import_cal <- function(cal_slug = "wimpys-world-of-streamers", cal_base_url = NU
   return(res)
 }
 
-time_parser <- function(x, zone = "America/New_York", format = "%Y-%m-%dT%H:%M:%SZ", convert_to_char = FALSE) {
+time_parser <- function(x, orig_zone = "UTC", new_zone = "America/New_York", format = "%Y-%m-%dT%H:%M:%SZ", convert_to_char = TRUE) {
   # was format = "%Y%m%dT%H%M%S" for ical
 
-  x <- clock::date_time_parse(x, zone, format = format)
-    # clock::as_naive_time() %>%
-    # clock::as_zoned_time(., zone)
+  x <- clock::date_time_parse(x, orig_zone, format = format)
+  x_z <- clock::as_zoned_time(x)
 
-  # x <- clock::date_time_parse(x, zone, format = format) %>%
-  #   clock::as_naive_time() %>%
-  #   clock::as_zoned_time(., zone)
+  # change to the desired time zone
+  x_final <- clock::zoned_time_set_zone(x_z, new_zone) %>% clock::as_naive_time()
   
   if (convert_to_char) {
-    x <- as.character(x)
+    x_final <- as.character(x_final)
   }
-  return(x)
+  return(x_final)
 }
 
 #' @importFrom dplyr mutate select left_join filter case_when

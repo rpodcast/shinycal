@@ -14,6 +14,13 @@ mod_cal_viewer_ui <- function(id){
   tagList(
     fluidRow(
       col_8(
+        radioButtons(
+          ns("cal_view"),
+          label = "View Type",
+          choices = c("day", "week", "month"),
+          selected = "week",
+          inline = TRUE
+        ),
         calendarOutput(ns("calui")),
         uiOutput(ns("vid"))
       ),
@@ -99,7 +106,7 @@ mod_cal_viewer_server <- function(id){
               tidyr::unnest(schedule_data) %>%
               mutate(calendarId = 1) %>%
               mutate(id = seq_len(dplyr::n())) %>%
-              mutate(start = as.character(start), end = as.character(end)) %>%
+              #mutate(start = as.character(start), end = as.character(end)) %>%
               mutate(raw = map2(title, categories, ~list(title = .x, categories = .y)))
 
         return(cal_sub)
@@ -156,14 +163,21 @@ mod_cal_viewer_server <- function(id){
         )
     })
 
+    observeEvent(
+      input$cal_view,
+      cal_proxy_view(ns("calui"), input$cal_view),
+      ignoreInit = TRUE
+    )
+
     observeEvent(input$fancy, {
-      removeUI(selector = "#custom_popup")
+      removeUI(selector = paste0("#", ns("custom_popup")))
       id <- as.numeric(input$fancy$id)
       # Get the appropriate line clicked
       sched <- cal_sub()[cal_sub()$id == id, ]
 
       insertUI(
         selector = "body",
+        #selector = paste0("#", ns("add")),
         ui = absolutePanel(
           id = ns("custom_popup"),
           top = input$fancy$y,
@@ -173,7 +187,7 @@ mod_cal_viewer_server <- function(id){
           tags$div(
             style = "background: #FFF; padding: 10px; box-shadow: 0px 0.2em 0.4em rgb(0, 0, 0, 0.8); border-radius: 5px;",
             actionLink(
-              inputId = "close_calendar_panel", 
+              inputId = ns("close_calendar_panel"), 
               label = NULL, 
               icon = icon("close"), 
               style = "position: absolute; top: 5px; right: 5px;"
@@ -182,12 +196,10 @@ mod_cal_viewer_server <- function(id){
             tags$div(
               style = "text-align: center;",
               tags$p(
-                "Here you can put custom", tags$b("HTML"), "elements."
-              ),
-              tags$p(
                 "You clicked on schedule", sched$id, 
                 "starting from", sched$start,
-                "ending", sched$end
+                "ending", sched$end,
+                "by", sched$user_id
               ),
               tags$p(
                 "Categories", list_to_li(sched$raw[[1]]$categories)
@@ -199,7 +211,7 @@ mod_cal_viewer_server <- function(id){
     })
 
     observeEvent(input$close_calendar_panel, {
-      removeUI(selector = glue::glue("#{x}", x = ns("custom_popup")))
+      removeUI(selector = paste0("#", ns("custom_popup")))
     })
   })
 

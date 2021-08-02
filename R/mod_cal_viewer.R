@@ -156,6 +156,18 @@ mod_cal_viewer_server <- function(id){
           cal = .,
           clickSchedule = JS(glue::glue('function(event) {console.log(event.schedule.id); Shiny.setInputValue("<<my_id>>", {raw: event.schedule.raw, id: event.schedule.id, x: event.event.clientX, y: event.event.clientY});}', .open = "<<", .close = ">>"))
           #clickSchedule = JS("function(event) {alert(event.schedule.id);}")
+        ) %>%
+        cal_timezone(
+          timezoneName = "America/New_York",
+          displayLabel = "UTC-05:00",
+          tooltip = "New York",
+          extra_zones = list(
+            list(
+              timezoneName = "UTC",
+              displayLabel = "UTC+00:00",
+              tooltip = "UTC"
+            )
+          )
         )
     })
 

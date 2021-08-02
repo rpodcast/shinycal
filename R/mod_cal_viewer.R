@@ -127,6 +127,7 @@ mod_cal_viewer_server <- function(id){
         #toastui::cal_demo_data(), 
         cal_sub(),
         view = "week",
+        scheduleView = list('time'),
         useNavigation = TRUE,
         useDetailPopup = FALSE,
       ) %>%

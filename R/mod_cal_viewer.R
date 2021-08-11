@@ -168,6 +168,10 @@ mod_cal_viewer_server <- function(id){
               tooltip = "UTC"
             )
           )
+        ) %>%
+        cal_week_options(
+          showTimezoneCollapseButton = TRUE,
+          timezonesCollapsed = FALSE
         )
     })
 

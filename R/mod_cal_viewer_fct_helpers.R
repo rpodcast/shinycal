@@ -8,6 +8,72 @@ get_twitch_id <- function(user_name) {
   return(res)
 }
 
+parse_duration <- function(x, 
+                           time_unit = c("seconds", "minutes", "hours"), 
+                           dur_regex = "([0-9]{1,2}h)?([0-9]{1,2}m)?([0-9]{1,2}(\\.[0-9]{1,3})?s)?") {
+  # process to reverse engineer the starting time of each video
+  # clever regex found at https://stackoverflow.com/a/11293491
+  # we get a matrix back with 2 rows (second row is meaningless)
+  # columns are the following
+  # - col 1: the raw duration string
+  # - col 2: the "hour" part of the duration string (ex "1h")
+  # - col 3: the "minute" part of the duration string (ex "1m")
+  # - col 4: the "second" part of the duration string (ex "1s")
+  # - col 5: meaningless
+  time_unit <- match.arg(time_unit)
+  dur_parsed <- stringr::str_match_all(x, dur_regex)[[1]]
+
+  # set up final duration
+  dur_final <- 0
+
+  # extract relevant parts of duration matrix
+  dur_vec <- readr::parse_number(dur_parsed[1, c(2,3,4)])
+
+  names(dur_vec) <- c("hours", "minutes", "seconds")
+
+  time_mult <- switch(
+    time_unit,
+    hours = c(1, (1/60), (1/3600)),
+    minutes = c(60, 1, (1/60)),
+    seconds = c(3600, 60, 1)
+  )
+
+  dur_vec <- sum(dur_vec * time_mult)
+
+  return(dur_vec)
+
+}
+
+# https://stackoverflow.com/questions/27397332/find-round-the-time-to-nearest-half-an-hour-from-a-single-file
+round_time <- function(x) {
+  x <- as.POSIXlt(x)
+
+  x$min <- round(x$min / 30) * 30
+  x$sec <- floor(x$sec / 60)
+
+  x <- as.POSIXct(x)
+  return(x)
+}
+
+shift_up_week <- function(x, convert = TRUE) {
+  if (!convert) {
+    return(x)
+  } else {
+    # get current day of week from supplied date
+    x_weekday <- clock::as_year_month_weekday(x) %>% clock::get_day()
+
+    res <- clock::date_shift(x, target = clock::weekday(x_weekday), which = "next", boundary = "advance")
+
+    return(res)
+  }
+}
+
+compute_end_clock <- function(start_clock, stream_length, precision = "hour") {
+  # truncate the stream length to floor of nearest hour
+  new_length <- clock::duration_round(clock::duration_seconds(stream_length), precision = precision)
+  end_clock <- clock::add_hours(start_clock, new_length)
+  return(end_clock)
+}
 
 
 get_twitch_schedule <- function(id) {
@@ -15,23 +81,70 @@ get_twitch_schedule <- function(id) {
   status <- httr::status_code(r)
 
   if (status != 200) {
-    warning(glue::glue("There was a problem with user {id} (status code {status})"))
-    return(NULL)
+    warning(glue::glue("User {id} does not have valid schedule data. Proceeding to infer a schedule based on videos uploaded (status code {status})"))
+    r <- httr::GET("https://api.twitch.tv/helix/videos", query = list(user_id = id, period = "week"))
+    status <- httr::status_code(r)
+
+    if (status != 200) {
+      warning(glue::glue("User {id} does not have any videos! Skipping ..."))
+      return(NULL)
+    } else {
+      current_weekday <- clock::date_now("America/New_York") %>%  
+        clock::as_year_month_weekday() %>% 
+        clock::get_day()
+
+      prev_week_date <- clock::date_now("America/New_York") %>% 
+        clock::date_shift(target = clock::weekday(current_weekday), which = "previous", boundary = "advance")
+
+      current_sunday <- clock::date_now("America/New_York") %>% 
+        clock::date_shift(target = clock::weekday(clock::clock_weekdays$sunday), which = "previous")
+
+      res <- httr::content(r, "parsed") %>%
+        purrr::pluck("data") %>%
+        tibble::tibble() %>%
+        tidyr::unnest_wider(1)
+
+      res_int <- res %>%
+        mutate(start = purrr::map(created_at, ~time_parser(.x, convert_to_char = FALSE))) %>%
+        mutate(start = purrr::map(start, ~clock::as_date_time(.x, zone = "America/New_York"))) %>%
+        mutate(duration2 = purrr::map_dbl(duration, ~parse_duration(.x, "seconds"))) %>%
+        tidyr::unnest(cols = c(start)) %>%
+        mutate(start = purrr::map(start, ~round_time(.x))) %>%
+        mutate(end = purrr::map2(start, duration2, ~compute_end_clock(.x, .y))) %>%
+        mutate(category = "time", 
+               recurrenceRule = "Every week",
+               start_time = NA, 
+               end_time = NA) %>%
+        tidyr::unnest(cols = c(start, end)) %>%
+        filter(start > prev_week_date)
+        
+      if (nrow(res_int) < 1) {
+        return(NULL)
+      } else {
+        res_final <- res_int %>%
+          mutate(before_week_ind = start < current_sunday) %>%
+          mutate(start = purrr::map2(start, before_week_ind, ~shift_up_week(.x, .y))) %>%
+          mutate(end = purrr::map2(end, before_week_ind, ~shift_up_week(.x, .y))) %>%
+          tidyr::unnest(cols = c(start, end)) %>%
+          mutate(start = as.character(start), end = as.character(end)) %>%
+          dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule)
+      }
+    }
+  } else {
+    res <- httr::content(r, "parsed") %>%
+      purrr::pluck("data", "segments") %>%
+      tibble::tibble() %>%
+      tidyr::unnest_wider(1)
+
+    res_final <- res %>%
+      mutate(start = purrr::map(start_time, ~time_parser(.x)),
+            end = purrr::map(end_time, ~time_parser(.x)),
+            category = "time",
+            recurrenceRule = "Every week") %>%
+      dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule) %>%
+      tidyr::unnest(cols = c(start, end))
+
   }
-  
-  res <- httr::content(r, "parsed") %>%
-    purrr::pluck("data", "segments") %>%
-    tibble::tibble() %>%
-    tidyr::unnest_wider(1)
-
-  res_final <- res %>%
-    mutate(start = purrr::map(start_time, ~time_parser(.x)),
-           end = purrr::map(end_time, ~time_parser(.x)),
-           category = "time",
-           recurrenceRule = "Every week") %>%
-    dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule) %>%
-    tidyr::unnest(cols = c(start, end))
-
   return(res_final)
 }
 

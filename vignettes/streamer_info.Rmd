@@ -27,6 +27,8 @@ library(calendar)
 library(caldav)
 library(dplyr)
 library(yaml)
+library(clock)
+
 
 readRenviron(".Renviron")
 ```
@@ -72,6 +74,128 @@ res <- withr::with_tempfile("tf", {
   ic_read(tf)
 })
 ```
+
+## Import last two weeks of video data in case schedule is not available
+
+```{r twitchvideos}
+# functions are in separate script now
+source("R/mod_cal_viewer_fct_helpers.R")
+
+user <- get_users(login = "nickwan_datasci")
+
+#twitch_clips <- twitchr::get_all_clips(broadcaster_id = user$id)
+
+r <- httr::GET("https://api.twitch.tv/helix/videos", query = list(user_id = user$id, period = "week"))
+status_code(r)
+
+
+res <- httr::content(r, "parsed") %>%
+  purrr::pluck("data") %>%
+  tibble::tibble() %>%
+  tidyr::unnest_wider(1)
+
+current_weekday <- date_now("America/New_York") %>%  
+  as_year_month_weekday() %>% 
+  get_day()
+
+prev_week_date <- date_now("America/New_York") %>% 
+  clock::date_shift(target = weekday(current_weekday), which = "previous", boundary = "advance")
+
+current_sunday <- date_now("America/New_York") %>% 
+  clock::date_shift(target = weekday(clock_weekdays$sunday), which = "previous")
+
+shift_up_week <- function(x, convert = TRUE) {
+  if (!convert) {
+    return(x)
+  } else {
+    # get current day of week from supplied date
+    x_weekday <- clock::as_year_month_weekday(x) %>% clock::get_day()
+
+    res <- clock::date_shift(x, target = clock::weekday(x_weekday), which = "next", boundary = "advance")
+
+    return(res)
+  }
+}
+
+res_final <- res %>%
+  mutate(start = purrr::map(created_at, ~time_parser(.x, convert_to_char = FALSE))) %>%
+  mutate(start = purrr::map(start, ~clock::as_date_time(.x, zone = "America/New_York"))) %>%
+  mutate(duration2 = purrr::map_dbl(duration, ~parse_duration(.x, "seconds"))) %>%
+  tidyr::unnest(cols = c(start)) %>%
+  mutate(start = purrr::map(start, ~round_time(.x))) %>%
+  mutate(end = purrr::map2(start, duration2, ~compute_end_clock(.x, .y))) %>%
+  mutate(category = "time", 
+          recurrenceRule = "Every week",
+          start_time = NA, 
+          end_time = NA) %>%
+  dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule) %>%
+  tidyr::unnest(cols = c(start, end)) %>%
+  filter(start > prev_week_date) %>%
+  mutate(before_week_ind = start < current_sunday) %>%
+  mutate(start = purrr::map2(start, before_week_ind, ~shift_up_week(.x, .y))) %>%
+  mutate(end = purrr::map2(end, before_week_ind, ~shift_up_week(.x, .y))) %>%
+  mutate(start = as.character(start), end = as.character(end))
+
+# experiment with time shifting
+# ideas
+# - based on current day, find the first day of the current week
+# - if the start date time is on a date before the first day of the week, then shift the date up. Otherwise, leave as it is
+
+test_weekdate <- clock::as_year_month_weekday(res_final$start[1])
+test_date <- clock::as_year_month_day(res_final$start[1])
+get_week(test_date)
+
+sunday <- clock::weekday(clock_weekdays$sunday)
+
+bench_date <- clock::date_shift(res_final$start[1], sunday, which = "previous")
+
+clock::date_shift(res_final$start[1], sunday, which = "previous")
+
+res_final$start[1] < bench_date
+
+clock::weekday(clock::date_now(zone = "America/New_York"))
+
+clock::date_shift(test_date, target = sunday, which = "previous")
+
+# experiment with rounding
+test_time <- clock::as_date_time(twitch_vids$start_clock[[1]], "America/New_York")
+
+# https://stackoverflow.com/questions/27397332/find-round-the-time-to-nearest-half-an-hour-from-a-single-file
+test_time2 <- as.POSIXlt(test_time)
+test_time2$min
+
+test_time2$min <- round(test_time2$min / 30) * 30
+test_time2
+
+test_time2$sec
+test_time2$sec <- floor(test_time2$sec / 60)
+test_time2
+
+as.POSIXct(test_time2)
+
+
+clock::date_round(test_time, "hour")
+
+
+twitch_vids$end_clock[[1]]
+twitch_vids$start_clock[[1]]
+clock::add_seconds(twitch_vids$end_clock[[1]], -30)
+View(twitch_vids)
+
+
+
+
+dur_parsed <- stringr::str_match_all(test_duration, dur_regex)
+dur_parsed
+
+r <- httr::GET("https://api.twitch.tv/helix/streams", query = list(user_id = user$id))
+status_code(r)
+
+res2 <- content(r, "parsed")
+twitch_streams <- res2
+
+```
+
 
 ### Import stream schedule
 

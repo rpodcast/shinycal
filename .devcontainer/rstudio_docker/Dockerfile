@@ -22,7 +22,9 @@ RUN /rocker_scripts/install_pandoc.sh
 # install key dependencies of certain packages that could be installed later
 RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends libxml2-dev libsodium-dev libssl-dev imagemagick libmagick++-dev libgit2-dev libssh2-1-dev zlib1g-dev librsvg2-dev libudunits2-dev libfontconfig1-dev libfreetype6-dev 
+    && apt-get -y install --no-install-recommends software-properties-common libssl-dev libxml2-dev libcurl4-openssl-dev python3-pip pandoc \
+    && apt-get -y install --no-install-recommends libfreetype6-dev libfontconfig1-dev tk \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* 
 
 # install R packages needed for VSCode interaction and package management 
 RUN install2.r languageserver renv remotes reticulate golem crul curl httr xml2 cachem shinyWidgets dplyr purrr ggplot2 tidyr fs glue calendar devtools rmarkdown clock

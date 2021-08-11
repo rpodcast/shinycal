@@ -371,6 +371,13 @@
       "Repository": "RSPM",
       "Hash": "8eb36c8125038e648e5d111c0d7b2ed4"
     },
+    "hms": {
+      "Package": "hms",
+      "Version": "1.1.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "e4bf161ccb74a2c1c0e8ac63bbe332b4"
+    },
     "htmltools": {
       "Package": "htmltools",
       "Version": "0.5.1.1",
@@ -572,6 +579,13 @@
       "Repository": "RSPM",
       "Hash": "0cbca2bc4d16525d009c4dbba156b37c"
     },
+    "progress": {
+      "Package": "progress",
+      "Version": "1.2.2",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "14dc9f7a3c91ebb14ec5bb9208a07061"
+    },
     "promises": {
       "Package": "promises",
       "Version": "1.2.0.1",
@@ -606,6 +620,13 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "ed95895886dab6d2a584da45503555da"
+    },
+    "readr": {
+      "Package": "readr",
+      "Version": "2.0.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "849038f0839134ab35e719a9820005a6"
     },
     "rematch2": {
       "Package": "rematch2",
@@ -777,15 +798,15 @@
     },
     "toastui": {
       "Package": "toastui",
-      "Version": "0.1.1.9100",
+      "Version": "0.1.2.9300",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteRepo": "toastui",
       "RemoteUsername": "dreamRs",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "f0a4fb14d918274517af2725930283884255260b",
-      "Hash": "fc412f82779b1a2a36b0001bc71d4688"
+      "RemoteRepo": "toastui",
+      "RemoteRef": "master",
+      "RemoteSha": "89ae28f627c9e7459ab40a8e45f6fe6cfc8e2c4e",
+      "Hash": "df193d340c7b4174a50f44ebaf49e826"
     },
     "twitchr": {
       "Package": "twitchr",
@@ -826,6 +847,13 @@
       "Source": "Repository",
       "Repository": "RSPM",
       "Hash": "ecf749a1b39ea72bd9b51b76292261f1"
+    },
+    "vroom": {
+      "Package": "vroom",
+      "Version": "1.5.4",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "1a23013f39e67bb57cbda6f4ddde5470"
     },
     "waldo": {
       "Package": "waldo",

@@ -1,0 +1,1 @@
+In the last few years, we have seen an huge uptick in the number of data science professionals and hobbyists who like to stream their projects and share their knowledge with the community! This calendar is my small attempt to contribute back to this awesome community so you can see what great streams are happening!

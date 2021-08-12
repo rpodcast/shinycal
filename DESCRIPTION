@@ -14,7 +14,16 @@ Imports:
     purrr,
     shiny (>= 1.6.0),
     clock,
-    shinylogs
+    shinylogs,
+    caldav (>= 0.1.0),
+    toastui (>= 0.1.2.9300),
+    tidyr,
+    fs,
+    stringr,
+    readr,
+    httr,
+    tibble,
+    twitchr (>= 0.1.0)
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
@@ -26,3 +35,7 @@ Suggests:
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)
+Remotes:  
+    petermeissner/caldav,
+    dreamRs/toastui,
+    KoderKow/twitchr

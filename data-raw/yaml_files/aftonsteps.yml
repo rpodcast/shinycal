@@ -1,0 +1,10 @@
+user_id: aftonsteps
+name: Afton Coombs
+twitter_id: aftonsteps
+platform: twitch
+bgColor: "#008080"
+color: "white"
+categories:
+  - r
+  - datascience
+  - shiny

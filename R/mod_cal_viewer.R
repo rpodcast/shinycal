@@ -116,37 +116,17 @@ mod_cal_viewer_server <- function(id){
       # coalesce(contains(dtstart()))
 
       # `YYYY-MM-DD XX:YY:ZZ`
-      
+      #browser()
       my_id <- ns("fancy")
 
-      
-        #tidyr::nest(raw = c(title, categories))
-        
-      
       toastui::calendar(
         #toastui::cal_demo_data(), 
-        cal_sub(),
+        cal_sub2,
         view = "week",
         scheduleView = list('time'),
         useNavigation = TRUE,
         useDetailPopup = FALSE,
       ) %>%
-        cal_props(
-          list(
-            id = 1,
-            name = "PERSO",
-            color = "white",
-            bgColor = "firebrick",
-            borderColor = "firebrick"
-          ),
-          list(
-            id = 2,
-            name = "WORK",
-            color = "white",
-            bgColor = "forestgreen",
-            borderColor = "forestgreen"
-          )
-        ) %>%
         cal_events(
           # schedule elements that we could grab
           # - location

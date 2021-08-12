@@ -13,14 +13,25 @@ mod_cal_viewer_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
-      col_12(
+      col_4(
         radioButtons(
           ns("cal_view"),
           label = "View Type",
           choices = c("day", "week", "month"),
           selected = "week",
           inline = TRUE
-        ),
+        )
+      ),
+      col_8(
+        selectInput(
+          ns("streamer_select"),
+          label = "Streamer",
+          choices = c("all")
+        )
+      )
+    ),
+    fluidRow(
+      col_12(
         calendarOutput(ns("calui")),
         uiOutput(ns("vid"))
       )
@@ -44,10 +55,10 @@ mod_cal_viewer_server <- function(id){
     })
 
     output$vid <- renderUI({
-      req(cal_sub())
+      req(cal_processed())
       req(schedule_click())
 
-      video_id <- cal_sub() %>%
+      video_id <- cal_processed() %>%
         dplyr::filter(id == schedule_click()$id) %>%
         tidyr::unnest(cols = videos_data) %>%
         dplyr::pull(videos_data)
@@ -96,7 +107,14 @@ mod_cal_viewer_server <- function(id){
       # _dates
     })
 
-    cal_sub <- reactive({
+    cal_processed <- reactive({
+      shiny::updateSelectInput(
+        session = session,
+        inputId = "streamer_select",
+        choices = c("all", cal_df$user_id),
+        selected = "all"
+      )
+
       cal_sub <- cal_df %>%
               tidyr::unnest(schedule_data) %>%
               mutate(calendarId = 1) %>%
@@ -106,12 +124,27 @@ mod_cal_viewer_server <- function(id){
 
         return(cal_sub)
     })
+
+    cal_display_df <- reactive({
+      req(cal_processed())
+      #req(input$streamer_select)
+
+      cal_sub2 <- cal_processed() %>%
+        select(., -videos_data, -start_time, -end_time, -category)
+
+      if (input$streamer_select != "all") {
+        cal_sub2 <- cal_sub2 %>%
+          filter(user_id == input$streamer_select)   
+      }
+
+      return(cal_sub2)
+    })
     
     output$calui <- renderCalendar({
-      req(cal_sub())
+      req(cal_display_df())
+      
 
-      cal_sub2 <- cal_sub() %>%
-        select(., -videos_data, -start_time, -end_time, -category)
+      
       # process cal_df to conform to the proper structure
       # coalesce(contains(dtstart()))
 
@@ -121,7 +154,7 @@ mod_cal_viewer_server <- function(id){
 
       toastui::calendar(
         #toastui::cal_demo_data(), 
-        cal_sub2,
+        cal_display_df(),
         view = "week",
         scheduleView = list('time'),
         useNavigation = TRUE,
@@ -165,7 +198,7 @@ mod_cal_viewer_server <- function(id){
       removeUI(selector = paste0("#", ns("custom_popup")))
       id <- as.numeric(input$fancy$id)
       # Get the appropriate line clicked
-      sched <- cal_sub()[cal_sub()$id == id, ]
+      sched <- cal_processed()[cal_processed()$id == id, ]
 
       start_time <- lubridate::as_datetime(sched$start) %>% hms::as_hms()  
       end_time <- lubridate::as_datetime(sched$end) %>% hms::as_hms()  

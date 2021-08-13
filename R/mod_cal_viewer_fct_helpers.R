@@ -55,14 +55,14 @@ round_time <- function(x) {
   return(x)
 }
 
-shift_up_week <- function(x, convert = TRUE) {
+shift_week <- function(x, convert = TRUE, which = "next") {
   if (!convert) {
     return(x)
   } else {
     # get current day of week from supplied date
     x_weekday <- clock::as_year_month_weekday(x) %>% clock::get_day()
 
-    res <- clock::date_shift(x, target = clock::weekday(x_weekday), which = "next", boundary = "advance")
+    res <- clock::date_shift(x, target = clock::weekday(x_weekday), which = which, boundary = "advance")
 
     return(res)
   }
@@ -73,6 +73,21 @@ compute_end_clock <- function(start_clock, stream_length, precision = "hour") {
   new_length <- clock::duration_round(clock::duration_seconds(stream_length), precision = precision)
   end_clock <- clock::add_hours(start_clock, new_length)
   return(end_clock)
+}
+
+time_parser <- function(x, orig_zone = "UTC", new_zone = "America/New_York", format = "%Y-%m-%dT%H:%M:%SZ", convert_to_char = TRUE) {
+  # was format = "%Y%m%dT%H%M%S" for ical
+
+  x <- clock::date_time_parse(x, orig_zone, format = format)
+  x_z <- clock::as_zoned_time(x)
+
+  # change to the desired time zone
+  x_final <- clock::zoned_time_set_zone(x_z, new_zone) %>% clock::as_naive_time()
+  
+  if (convert_to_char) {
+    x_final <- as.character(x_final)
+  }
+  return(x_final)
 }
 
 
@@ -123,8 +138,8 @@ get_twitch_schedule <- function(id) {
       } else {
         res_final <- res_int %>%
           mutate(before_week_ind = start < current_sunday) %>%
-          mutate(start = purrr::map2(start, before_week_ind, ~shift_up_week(.x, .y))) %>%
-          mutate(end = purrr::map2(end, before_week_ind, ~shift_up_week(.x, .y))) %>%
+          mutate(start = purrr::map2(start, before_week_ind, ~shift_week(.x, .y))) %>%
+          mutate(end = purrr::map2(end, before_week_ind, ~shift_week(.x, .y))) %>%
           tidyr::unnest(cols = c(start, end)) %>%
           mutate(start = as.character(start), end = as.character(end)) %>%
           dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule)
@@ -136,13 +151,34 @@ get_twitch_schedule <- function(id) {
       tibble::tibble() %>%
       tidyr::unnest_wider(1)
 
-    res_final <- res %>%
-      mutate(start = purrr::map(start_time, ~time_parser(.x)),
-            end = purrr::map(end_time, ~time_parser(.x)),
-            category = "time",
-            recurrenceRule = "Every week") %>%
-      dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule) %>%
-      tidyr::unnest(cols = c(start, end))
+    res_int <- res %>%
+      mutate(start = purrr::map(start_time, ~time_parser(.x, convert_to_char = FALSE)),
+             end = purrr::map(end_time, ~time_parser(.x, convert_to_char = FALSE)),
+             category = "time",
+             recurrenceRule = "Every week") %>%
+      dplyr::select(start_time, start, end_time, end, title, category, recurrenceRule)
+      #tidyr::unnest(cols = c(start, end))
+
+    # grab the first records of each unique stream     
+    res_first <- res_int %>%
+      dplyr::group_by(title) %>%
+      dplyr::arrange(title, start) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup() %>%
+      mutate(start = purrr::map(start, ~clock::as_date_time(.x, zone = "America/New_York")),
+              end = purrr::map(end, ~clock::as_date_time(.x, zone = "America/New_York"))) %>%
+      mutate(start = purrr::map(start, ~shift_week(.x, which = "previous")),
+              end = purrr::map(end, ~shift_week(.x, which = "previous"))) %>%
+      mutate(start = purrr::map(start, ~clock::as_naive_time(.x)),
+             end = purrr::map(end, ~clock::as_naive_time(.x)))
+
+      # bind back together
+      res_final <- dplyr::bind_rows(
+        tidyr::unnest(res_first, c("start", "end")), 
+        tidyr::unnest(res_int, c("start", "end"))
+      ) %>%
+      mutate(start = as.character(start), end = as.character(end))
+
 
   }
   return(res_final)
@@ -217,21 +253,6 @@ import_cal <- function(cal_slug = "wimpys-world-of-streamers", cal_base_url = NU
   })
   
   return(res)
-}
-
-time_parser <- function(x, orig_zone = "UTC", new_zone = "America/New_York", format = "%Y-%m-%dT%H:%M:%SZ", convert_to_char = TRUE) {
-  # was format = "%Y%m%dT%H%M%S" for ical
-
-  x <- clock::date_time_parse(x, orig_zone, format = format)
-  x_z <- clock::as_zoned_time(x)
-
-  # change to the desired time zone
-  x_final <- clock::zoned_time_set_zone(x_z, new_zone) %>% clock::as_naive_time()
-  
-  if (convert_to_char) {
-    x_final <- as.character(x_final)
-  }
-  return(x_final)
 }
 
 #' @importFrom dplyr mutate select left_join filter case_when

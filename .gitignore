@@ -5,3 +5,4 @@
 inst/doc
 prototyping/*
 !prototyping/README.md
+README.html

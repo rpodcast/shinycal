@@ -53,4 +53,9 @@ golem::add_dockerfile_heroku()
 #     secret = Sys.getenv("RSCONNECT_SECRET")
 # )
 
-rsconnect::deployApp(appName = "shinycal", appFileManifest = "dev/app_manifest.txt", launch.browser = FALSE)
+rsconnect::deployApp(
+    appName = "shinycal", 
+    appFileManifest = "dev/app_manifest.txt", 
+    launch.browser = FALSE, 
+    forceUpdate = TRUE
+)

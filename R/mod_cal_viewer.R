@@ -45,8 +45,14 @@ mod_cal_viewer_ui <- function(id){
 mod_cal_viewer_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-    cal_df <- streamer_data
-
+    
+    # load data set from online storage if running app on production
+    if (getOption("golem.app.prod")) {
+      cal_df <- readRDS(url("https://sds-streamer-data.us-east-1.linodeobjects.com/streamer_data_current.rds", "rb"))
+    } else {
+      cal_df <- streamer_data
+    }
+    
     # reactive value for clicked schedule item
     schedule_click <- reactiveVal(NULL)
 

@@ -1,8 +1,9 @@
 {
     "type": "R-Debugger",
     "request": "launch",
-    "name": "Launch Workspace",
-    "debugMode": "workspace",
+    "name": "Debug Shiny App",
+    "debugMode": "file",
     "workingDirectory": "${workspaceFolder}",
-    "allowGlobalDebugging": true
+    "file": "${workspaceFolder}/dev/run_dev.R",
+    "allowGlobalDebugging": false
   }

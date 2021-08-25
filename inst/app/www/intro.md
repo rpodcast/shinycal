@@ -1,1 +1,3 @@
 In the last few years, we have seen an huge uptick in the number of data science professionals and hobbyists who like to stream their projects and share their knowledge with the community! This calendar is my small attempt to contribute back to this awesome community so you can see what great streams are happening!
+
+Check out Jesse Mostipak's [Data Science Streamers](https://www.jessemaegan.com/blog/2021-05-28-data-science-twitch-streamers-round-up/) blog post for a great roundup of the content creators seen on this calendar!

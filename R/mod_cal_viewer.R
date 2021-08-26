@@ -48,11 +48,11 @@ mod_cal_viewer_ui <- function(id){
     ),
     fluidRow(
       col_8(
-        calendarOutput(ns("calui")),
-        uiOutput(ns("vid"))
+        calendarOutput(ns("calui"))
       ),
       col_4(
-        h2("More great stuff here")
+        h4("Click an entry to view the streamer's latest VOD!"),
+        uiOutput(ns("vid"))
       )
     )
   )
@@ -91,8 +91,8 @@ mod_cal_viewer_server <- function(id){
       js_snippet <- glue::glue("
       <script type='text/javascript'>
           var options = {
-            width: '800',
-            height: '600',
+            width: '600',
+            height: '400',
             video: '<<<video_id>>>',
             autoplay: false
             //parent: 'localhost'

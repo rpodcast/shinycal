@@ -1,3 +1,6 @@
+# shinycal 0.4
+
+* Move video player for a streamer's latest VOD to the right of the calendar
 # shinycal 0.3
 
 * Added a `NEWS.md` file to track changes to the package.

@@ -13,7 +13,7 @@ mod_cal_viewer_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
-      col_4(
+      col_3(
         radioButtons(
           ns("cal_view"),
           label = "View Type",
@@ -22,18 +22,37 @@ mod_cal_viewer_ui <- function(id){
           inline = TRUE
         )
       ),
-      col_8(
+      col_3(
         selectInput(
           ns("streamer_select"),
           label = "Streamer",
           choices = c("all")
         )
+      ),
+      col_3(
+        colourpicker::colourInput(
+          ns("entry_color"),
+          label = "Entry Color",
+          value = "#0ff1a6"
+        )       
+      ),
+      col_3(
+        colourpicker::colourInput(
+          ns("entry_font_color"),
+          label = "Entry Font Color",
+          palette = "limited",
+          value = "white",
+          allowedCols = c("white", "black")
+        )
       )
     ),
     fluidRow(
-      col_12(
+      col_8(
         calendarOutput(ns("calui")),
         uiOutput(ns("vid"))
+      ),
+      col_4(
+        h2("More great stuff here")
       )
     )
   )
@@ -133,11 +152,15 @@ mod_cal_viewer_server <- function(id){
 
     cal_display_df <- reactive({
       req(cal_processed())
+      req(input$entry_color)
+      req(input$entry_font_color)
+
       #req(input$streamer_select)
-
       cal_sub2 <- cal_processed() %>%
-        select(., -videos_data, -start_time, -end_time, -category)
-
+        select(., -videos_data, -start_time, -end_time, -category) %>%
+        mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
+        mutate(color = ifelse(is.na(color), input$entry_font_color, color))
+      
       if (input$streamer_select != "all") {
         cal_sub2 <- cal_sub2 %>%
           filter(user_id == input$streamer_select)   
@@ -145,12 +168,11 @@ mod_cal_viewer_server <- function(id){
 
       return(cal_sub2)
     })
-    
-    output$calui <- renderCalendar({
-      req(cal_display_df())
-      
 
-      
+    # reactive for calendar object
+    cal_display_obj <- reactive({
+      req(cal_display_df())
+      req(input$entry_color)
       # process cal_df to conform to the proper structure
       # coalesce(contains(dtstart()))
 
@@ -192,13 +214,36 @@ mod_cal_viewer_server <- function(id){
           showTimezoneCollapseButton = TRUE,
           timezonesCollapsed = FALSE
         )
+        # cal_theme(
+        #   common.border = "2px solid #E5E9F0",
+        #   month.dayname.borderLeft = "2px solid #E5E9F0",
+        #   common.backgroundColor = "#2E3440",
+        #   #month.dayExceptThisMonth.color = input$entry_color,
+        #   #common.backgroundColor = input$entry_color,
+        #   common.holiday.color = "#88C0D0",
+        #   common.saturday.color = "#88C0D0",
+        #   common.dayname.color = "#ECEFF4",
+        #   common.today.color = "#333"
+        # )
+    })
+    
+    output$calui <- renderCalendar({
+      req(cal_display_obj())
+      cal_display_obj()
     })
 
+    # update calendar view when toggled
     observeEvent(
       input$cal_view,
       cal_proxy_view(ns("calui"), input$cal_view),
       ignoreInit = TRUE
     )
+
+    # update calendar cell colors when toggled
+    observeEvent(input$entry_color, {
+      # TODO: Keep this in case I need it later
+      #message(glue::glue("color is {color}", color = input$entry_color))
+    })
 
     observeEvent(input$fancy, {
       removeUI(selector = paste0("#", ns("custom_popup")))

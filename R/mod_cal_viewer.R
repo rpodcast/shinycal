@@ -167,11 +167,11 @@ mod_cal_viewer_server <- function(id){
       req(input$entry_color)
       req(input$entry_font_color)
       req(input$time_zone)
-
+      
       # convert times to be the time zone selected
       cal_sub2 <- cal_processed() %>%
-        mutate(start = purrr::map_chr(start_time, ~time_parser(.x, new_zone = input$time_zone, convert_to_char = TRUE))) %>%
-        mutate(end = purrr::map_chr(end_time, ~time_parser(.x, new_zone = input$time_zone, convert_to_char = TRUE))) %>%
+        mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = input$time_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
+        mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = input$time_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
         select(., -videos_data, -start_time, -end_time, -category) %>%
         mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
         mutate(color = ifelse(is.na(color), input$entry_font_color, color))
@@ -213,10 +213,10 @@ mod_cal_viewer_server <- function(id){
           clickSchedule = JS(glue::glue('function(event) {console.log(event.schedule.id); Shiny.setInputValue("<<my_id>>", {raw: event.schedule.raw, id: event.schedule.id, x: event.event.clientX, y: event.event.clientY});}', .open = "<<", .close = ">>"))
           #clickSchedule = JS("function(event) {alert(event.schedule.id);}")
         ) %>%
-        cal_timezone(
-          timezoneName = input$time_zone,
-          displayLabel = NULL
-        ) %>%
+        # cal_timezone(
+        #   timezoneName = input$time_zone,
+        #   displayLabel = NULL
+        # ) %>%
         cal_week_options(
           showTimezoneCollapseButton = TRUE,
           timezonesCollapsed = FALSE

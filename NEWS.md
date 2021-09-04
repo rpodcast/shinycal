@@ -1,3 +1,7 @@
+# shinycal 0.5
+
+* Add a new time zone selector (powered by `{shinyWidgets}`) 
+* Revise how the view type changes the calendar view on the backend. The value of this input is now directly fed into the calendar function, instead of changing it via the proxy object.
 # shinycal 0.4
 
 * Move video player for a streamer's latest VOD to the right of the calendar

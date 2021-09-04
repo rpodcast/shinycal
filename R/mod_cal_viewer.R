@@ -47,6 +47,19 @@ mod_cal_viewer_ui <- function(id){
       )
     ),
     fluidRow(
+      col_4(
+        shinyWidgets::pickerInput(
+          ns("time_zone"),
+          label = "Select Time Zone",
+          choices = OlsonNames(),
+          selected = "America/Los_Angeles",
+          options = shinyWidgets::pickerOptions(
+            liveSearch = TRUE
+          )
+        )
+      )
+    ),
+    fluidRow(
       col_8(
         calendarOutput(ns("calui"))
       ),
@@ -144,7 +157,6 @@ mod_cal_viewer_server <- function(id){
               tidyr::unnest(schedule_data) %>%
               mutate(calendarId = 1) %>%
               mutate(id = seq_len(dplyr::n())) %>%
-              #mutate(start = as.character(start), end = as.character(end)) %>%
               mutate(raw = map2(title, categories, ~list(title = .x, categories = .y)))
 
         return(cal_sub)
@@ -154,9 +166,12 @@ mod_cal_viewer_server <- function(id){
       req(cal_processed())
       req(input$entry_color)
       req(input$entry_font_color)
+      req(input$time_zone)
 
-      #req(input$streamer_select)
+      # convert times to be the time zone selected
       cal_sub2 <- cal_processed() %>%
+        mutate(start = purrr::map_chr(start_time, ~time_parser(.x, new_zone = input$time_zone, convert_to_char = TRUE))) %>%
+        mutate(end = purrr::map_chr(end_time, ~time_parser(.x, new_zone = input$time_zone, convert_to_char = TRUE))) %>%
         select(., -videos_data, -start_time, -end_time, -category) %>%
         mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
         mutate(color = ifelse(is.na(color), input$entry_font_color, color))
@@ -183,7 +198,7 @@ mod_cal_viewer_server <- function(id){
       toastui::calendar(
         #toastui::cal_demo_data(), 
         cal_display_df(),
-        view = "week",
+        view = input$cal_view,
         scheduleView = list('time'),
         useNavigation = TRUE,
         useDetailPopup = FALSE,
@@ -199,16 +214,8 @@ mod_cal_viewer_server <- function(id){
           #clickSchedule = JS("function(event) {alert(event.schedule.id);}")
         ) %>%
         cal_timezone(
-          timezoneName = "America/New_York",
-          displayLabel = "UTC-05:00",
-          tooltip = "New York",
-          extra_zones = list(
-            list(
-              timezoneName = "UTC",
-              displayLabel = "UTC+00:00",
-              tooltip = "UTC"
-            )
-          )
+          timezoneName = input$time_zone,
+          displayLabel = NULL
         ) %>%
         cal_week_options(
           showTimezoneCollapseButton = TRUE,
@@ -231,13 +238,6 @@ mod_cal_viewer_server <- function(id){
       req(cal_display_obj())
       cal_display_obj()
     })
-
-    # update calendar view when toggled
-    observeEvent(
-      input$cal_view,
-      cal_proxy_view(ns("calui"), input$cal_view),
-      ignoreInit = TRUE
-    )
 
     # update calendar cell colors when toggled
     observeEvent(input$entry_color, {

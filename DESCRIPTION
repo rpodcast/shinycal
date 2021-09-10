@@ -1,6 +1,6 @@
 Package: shinycal
 Title: PKG_TITLE
-Version: 0.5
+Version: 0.5.1
 Authors@R: person('AUTHOR_FIRST', 'AUTHOR_LAST', email = 'AUTHOR@MAIL.COM', role = c('cre', 'aut'))
 Description: PKG_DESC.
 License: MIT + file LICENSE

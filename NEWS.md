@@ -1,3 +1,6 @@
+# shinycal 0.5.1
+
+* Organize the time zone choices into groups (thanks, @tanho63 and @PythonCoderUnicorn!)
 # shinycal 0.5
 
 * Add a new time zone selector (powered by `{shinyWidgets}`) 

@@ -295,3 +295,24 @@ process_cal <- function(raw_df) {
 
   return(final_df)
 }
+
+process_raw_timezones <- function() {
+  source_html <- "inst/app/www/timezones_raw.html"
+
+  # ALL credit goes to Tan for rescuing me yet again!
+  y <- rvest::read_html(source_html) %>% 
+    rvest::html_element("form select") %>% 
+    rvest::html_children()
+
+  timezone_res <- tibble::tibble(
+    label = y %>% rvest::html_attr("label"),
+    value = y %>% rvest::html_attr("value")
+  ) %>%
+    tidyr::fill(label) %>%
+    dplyr::filter(!is.na(value)) %>%
+    dplyr::group_by(label) %>%
+    dplyr::summarise(value = list(value)) %>%
+    tibble::deframe()
+
+  return(timezone_res)
+}

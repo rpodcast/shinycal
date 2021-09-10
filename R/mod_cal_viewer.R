@@ -51,7 +51,7 @@ mod_cal_viewer_ui <- function(id){
         shinyWidgets::pickerInput(
           ns("time_zone"),
           label = "Select Time Zone",
-          choices = OlsonNames(),
+          choices = process_raw_timezones(),
           selected = "America/Los_Angeles",
           options = shinyWidgets::pickerOptions(
             liveSearch = TRUE

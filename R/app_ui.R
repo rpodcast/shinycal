@@ -9,10 +9,21 @@ app_ui <- function(request) {
     # Leave this function for adding external resources
     golem_add_external_resources(),
     # Your application UI logic 
-    fluidPage(
-      h1("The Data Science StreamRs Calendar!"),
-      shiny::includeMarkdown(app_sys("app", "www", "intro.md")),
-      mod_cal_viewer_ui("cal_viewer_ui_1")
+    navbarPage(
+      title = "shinycal",
+      tabPanel(
+        title = "Calendar",
+        value = "calendar",
+        h1("The Data Science StreamRs Calendar!"),
+        shiny::includeMarkdown(app_sys("app", "www", "intro.md")),
+        mod_cal_viewer_ui("cal_viewer_ui_1")
+      ),
+      tabPanel(
+        title = "Entry",
+        value = "entry",
+        h1("The module goes here!"),
+        mod_cal_entry_ui("cal_entry_ui_1")
+      )
     )
   )
 }

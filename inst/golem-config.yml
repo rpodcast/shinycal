@@ -4,7 +4,9 @@ default:
   app_prod: no
   cal_host: "nextcloud.r-podcastdev.link"
   cal_base_url: "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/shinycal"
+  streamer_data_repo: "git@github.com:rpodcast/streamer_data_dev.git"
 production:
   app_prod: yes
+  streamer_data_repo: "git@github.com:rpodcast/streamer_data.git"
 dev:
   golem_wd: !expr here::here()

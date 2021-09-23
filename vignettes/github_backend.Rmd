@@ -47,9 +47,9 @@ fs::dir_ls(yaml_dir)
 fs::file_copy(fs::path(yaml_dir, "unicoRn_coder.yml"), fs::path(yaml_dir, "live_streamer.yml"))
 
 withr::with_dir(repo_dir, {
-  #git_add("yaml_files/live_streamer.yml")
-  #git_commit("Add live_streamer.yml")
-  #usethis::pr_init(branch = "live-streamer3")
+  git_add("yaml_files/live_streamer.yml")
+  git_commit("Add live_streamer.yml")
+  usethis::pr_init(branch = "live-streamer3")
   #usethis::pr_push()
   system("git push -u origin live-streamer3")
 })

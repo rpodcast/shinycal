@@ -1,0 +1,60 @@
+---
+title: "github_backend"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{github_backend}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(usethis)
+```
+
+### Setting up a local copy of repo
+
+```{r setup-git}
+github_url <- "git@github.com:rpodcast/streamer_data_dev.git"
+
+#dest_dir <- fs::path("prototyping", "github_data")
+dest_dir <- fs::path(fs::path_temp(), "github_data")
+
+if (fs::dir_exists(dest_dir)) fs::dir_delete(dest_dir)
+fs::dir_create(dest_dir)
+
+create_from_github(github_url, destdir = dest_dir, fork = FALSE, rstudio = FALSE, open = FALSE, protocol = "ssh")
+
+fs::dir_tree(dest_dir)
+```
+
+### Try sending a PR with a new file
+
+```{r pr-from-local}
+library(gert)
+# make a new yaml file
+repo_dir <- fs::path(dest_dir, "streamer_data_dev")
+yaml_dir <- fs::path(dest_dir, "streamer_data_dev", "yaml_files")
+
+fs::dir_ls(yaml_dir)
+# copy one for testing
+fs::file_copy(fs::path(yaml_dir, "unicoRn_coder.yml"), fs::path(yaml_dir, "live_streamer.yml"))
+
+withr::with_dir(repo_dir, {
+  #git_add("yaml_files/live_streamer.yml")
+  #git_commit("Add live_streamer.yml")
+  #usethis::pr_init(branch = "live-streamer3")
+  #usethis::pr_push()
+  system("git push -u origin live-streamer3")
+})
+
+
+
+
+```

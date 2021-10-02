@@ -213,10 +213,10 @@ mod_cal_viewer_server <- function(id){
           clickSchedule = JS(glue::glue('function(event) {console.log(event.schedule.id); Shiny.setInputValue("<<my_id>>", {raw: event.schedule.raw, id: event.schedule.id, x: event.event.clientX, y: event.event.clientY});}', .open = "<<", .close = ">>"))
           #clickSchedule = JS("function(event) {alert(event.schedule.id);}")
         ) %>%
-        # cal_timezone(
-        #   timezoneName = input$time_zone,
-        #   displayLabel = NULL
-        # ) %>%
+        cal_timezone(
+          timezoneName = input$time_zone,
+          displayLabel = NULL
+        ) %>%
         cal_week_options(
           showTimezoneCollapseButton = TRUE,
           timezonesCollapsed = FALSE

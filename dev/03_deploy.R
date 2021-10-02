@@ -53,9 +53,24 @@ golem::add_dockerfile_heroku()
 #     secret = Sys.getenv("RSCONNECT_SECRET")
 # )
 
-rsconnect::deployApp(
-    appName = "shinycal", 
-    appFileManifest = "dev/app_manifest.txt", 
-    launch.browser = FALSE, 
-    forceUpdate = TRUE
-)
+library(gert)
+current_branch <- git_branch()
+
+if (current_branch == "main") {
+    rsconnect::deployApp(
+        appName = "shinycal", 
+        appFileManifest = "dev/app_manifest.txt", 
+        launch.browser = FALSE, 
+        forceUpdate = TRUE
+    )
+} else if (current_branch == "dev") {
+    rsconnect::deployApp(
+        appName = "shinycal_dev", 
+        appFileManifest = "dev/app_manifest.txt", 
+        launch.browser = FALSE, 
+        forceUpdate = TRUE
+    )
+} else {
+    message("Only the dev and main branches are deployable, nothing to do!")
+}
+

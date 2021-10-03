@@ -52,7 +52,7 @@ mod_cal_viewer_ui <- function(id){
           ns("time_zone"),
           label = "Select Time Zone",
           choices = process_raw_timezones(),
-          selected = "America/Los_Angeles",
+          selected = "America/New_York",
           options = shinyWidgets::pickerOptions(
             liveSearch = TRUE
           )
@@ -166,19 +166,21 @@ mod_cal_viewer_server <- function(id){
       req(cal_processed())
       req(input$entry_color)
       req(input$entry_font_color)
-      req(input$time_zone)
+     
+      # let the calendar render portion handle offsets / time conversion
+      # original time zone is America/New_York, so stick with that after parsing
+      new_zone <- "America/New_York"
       
-      # convert times to be the time zone selected
       cal_sub2 <- cal_processed() %>%
-        mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = input$time_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
-        mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = input$time_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
+        mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
+        mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
         select(., -videos_data, -start_time, -end_time, -category) %>%
         mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
         mutate(color = ifelse(is.na(color), input$entry_font_color, color))
       
       if (input$streamer_select != "all") {
         cal_sub2 <- cal_sub2 %>%
-          filter(user_id == input$streamer_select)   
+          filter(user_id == input$streamer_select)
       }
 
       return(cal_sub2)

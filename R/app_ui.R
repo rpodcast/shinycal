@@ -21,8 +21,8 @@ app_ui <- function(request) {
       tabPanel(
         title = "Entry",
         value = "entry",
-        h1("The module goes here!"),
-        mod_cal_entry_ui("cal_entry_ui_1")
+        h1("Under Construction!")
+        #mod_cal_entry_ui("cal_entry_ui_1")
       )
     )
   )

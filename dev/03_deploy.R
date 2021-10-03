@@ -57,21 +57,13 @@ library(gert)
 current_branch <- git_branch()
 app_name <- golem::get_golem_name()
 
-if (current_branch == "master") {
-    rsconnect::deployApp(
-        appName = app_name, 
-        appFileManifest = "dev/app_manifest.txt", 
-        launch.browser = FALSE, 
-        forceUpdate = TRUE
-    )
-} else if (current_branch == "dev") {
-    rsconnect::deployApp(
-        appName = paste0(app_name, "_dev"), 
-        appFileManifest = "dev/app_manifest.txt", 
-        launch.browser = FALSE, 
-        forceUpdate = TRUE
-    )
-} else {
-    message("Only the dev and main branches are deployable, nothing to do!")
+if (current_branch != "master") {
+    app_name <- paste0(app_name, "_dev")
 }
 
+rsconnect::deployApp(
+  appName = app_name, 
+  appFileManifest = "dev/app_manifest.txt", 
+  launch.browser = FALSE, 
+  forceUpdate = TRUE
+)

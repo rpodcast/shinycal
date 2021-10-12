@@ -75,10 +75,10 @@ compute_end_clock <- function(start_clock, stream_length, precision = "hour") {
   return(end_clock)
 }
 
-time_parser <- function(x, orig_zone = "UTC", new_zone = "America/New_York", format = "%Y-%m-%dT%H:%M:%SZ", convert_to_char = TRUE) {
+time_parser <- function(x, orig_zone = "UTC", new_zone = "America/New_York", format = "%Y-%m-%dT%H:%M:%SZ", ambiguous = "earliest", convert_to_char = TRUE) {
   # was format = "%Y%m%dT%H%M%S" for ical
 
-  x <- clock::date_time_parse(x, orig_zone, format = format)
+  x <- clock::date_time_parse(x, orig_zone, format = format, ambiguous = ambiguous)
   x_z <- clock::as_zoned_time(x)
 
   # change to the desired time zone

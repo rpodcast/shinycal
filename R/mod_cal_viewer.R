@@ -82,7 +82,7 @@ mod_cal_viewer_server <- function(id){
     if (getOption("golem.app.prod")) {
       cal_df <- readRDS(url("https://sds-streamer-data.us-east-1.linodeobjects.com/streamer_data_current.rds", "rb"))
     } else {
-      cal_df <- streamer_data
+      cal_df <- readRDS("prototyping/streamer_data_current.rds")
     }
     
     # reactive value for clicked schedule item

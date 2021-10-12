@@ -1,3 +1,8 @@
+# shinycal 0.6
+
+* Account for daylight savings time by adding `ambiguous` param to custom time parser functions
+* Add nodejs and puppeteer to the development contrainer for further timezone testing
+
 # shinycal 0.5.1
 
 * Organize the time zone choices into groups (thanks, @tanho63 and @PythonCoderUnicorn!)
@@ -13,4 +18,4 @@
 * Added a `NEWS.md` file to track changes to the package.
 * Allow user to change the calendar entry background color as well as font color
 * Add placeholder margin for new elements
-* Restructed reactive components of the calendar display data
+* Restructured reactive components of the calendar display data

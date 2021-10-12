@@ -58,9 +58,51 @@ RUN echo "RENV_PATHS_CACHE=/renv/cache" >> /usr/local/lib/R/etc/Renviron
 COPY library-scripts/.Rprofile-vscode /renv/.Rprofile-vscode
 
 # [Optional] Uncomment this section to add addtional system dependencies needed for project
-# RUN apt-get update \
-#     && export DEBIAN_FRONTEND=noninteractive \
-#     && apt-get -y install --no-install-recommends ---packages list----
+
+# [Optional] Uncomment this section to install additional OS packages.
+RUN apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    fonts-liberation \
+    gconf-service \
+    libxshmfence1 \
+    libasound2 \
+    libatk1.0-0 \
+    libcairo2 \
+    libcups2 \
+    libfontconfig1 \
+    libgbm-dev \
+    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libicu-dev \
+    libjpeg-dev \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libpng-dev \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrandr2 \
+    libxrender1 \
+    libxss1 \
+    libxtst6 \
+    xdg-utils
+
+RUN curl -sL https://deb.nodesource.com/setup_16.x -o /tmp/nodesource_setup.sh
+RUN bash /tmp/nodesource_setup.sh
+RUN apt-get update \
+    && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends nodejs
+
+RUN npm install puppeteer -g
 
 # [Optional] Set the default user. Omit if you want to keep the default as root.
 USER $USERNAME

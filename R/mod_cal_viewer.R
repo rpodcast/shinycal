@@ -176,14 +176,12 @@ mod_cal_viewer_server <- function(id){
         selected = session$userData$zone()
       )
 
+      # apply client time zone to schedule data
       new_zone <- session$userData$zone()
-      
       cal_sub2 <- cal_sub %>%
         mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
         mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
         select(., -videos_data, -start_time, -end_time, -category)
-        #mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
-        #mutate(color = ifelse(is.na(color), input$entry_font_color, color))
 
       cal_display_df(cal_sub2)
     })
@@ -191,7 +189,6 @@ mod_cal_viewer_server <- function(id){
     observeEvent(input$time_zone, {
       req(session$userData$zone())
       req(cal_display_df())
-      message("entered time zone input change")
       
       # on default render (when no choices have been updated), do nothing
       if (input$time_zone == "nothing") return(NULL)
@@ -199,13 +196,12 @@ mod_cal_viewer_server <- function(id){
       # update schedule data with new time zone
       prev_zone <- session$userData$zone()
 
-
       if (!is.null(cal_prev_timezone())) {
         prev_zone <- cal_prev_timezone()
       }
 
+      # apply selected time zone to schedule data
       if (input$time_zone != prev_zone) {
-        message("entered different zone")
 
         new_zone <- input$time_zone
         cal_prev_timezone(new_zone)
@@ -222,7 +218,12 @@ mod_cal_viewer_server <- function(id){
     cal_display_obj <- reactive({
       req(cal_display_df())
       req(input$entry_color)
-      cal_tmp <- cal_display_df()
+      req(input$entry_font_color)
+
+      # apply background and font colors to calendar entries
+      cal_tmp <- cal_display_df() %>%
+        mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
+        mutate(color = ifelse(is.na(color), input$entry_font_color, color))
 
       # filter for selected streamers if not "all"
       if (input$streamer_select != "nothing") {
@@ -347,8 +348,6 @@ mod_cal_viewer_server <- function(id){
       removeUI(selector = paste0("#", ns("custom_popup")))
     })
   })
-
-
 }
     
 ## To be copied in the UI

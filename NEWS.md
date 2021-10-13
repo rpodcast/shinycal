@@ -1,3 +1,7 @@
+# shinycal 0.7
+
+* Add custom javascript for detecting the time zone of the user browsing the app, and make that the default time zone when application finishes loading. This solves the bug of time zones not being correctly mapped for those outside of the original America/New_York time zone (#26)
+
 # shinycal 0.6
 
 * Account for daylight savings time by adding `ambiguous` param to custom time parser functions

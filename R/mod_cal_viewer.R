@@ -26,7 +26,7 @@ mod_cal_viewer_ui <- function(id){
         selectInput(
           ns("streamer_select"),
           label = "Streamer",
-          choices = c("all")
+          choices = c("nothing")
         )
       ),
       col_3(
@@ -41,7 +41,7 @@ mod_cal_viewer_ui <- function(id){
           ns("entry_font_color"),
           label = "Entry Font Color",
           palette = "limited",
-          value = "white",
+          value = "black",
           allowedCols = c("white", "black")
         )
       )
@@ -51,11 +51,8 @@ mod_cal_viewer_ui <- function(id){
         shinyWidgets::pickerInput(
           ns("time_zone"),
           label = "Select Time Zone",
-          choices = process_raw_timezones(),
-          selected = "America/New_York",
-          options = shinyWidgets::pickerOptions(
-            liveSearch = TRUE
-          )
+          choices = c("nothing"),
+          options = shinyWidgets::pickerOptions(liveSearch = TRUE)
         )
       )
     ),
@@ -84,19 +81,32 @@ mod_cal_viewer_server <- function(id){
     } else {
       cal_df <- readRDS("prototyping/streamer_data_current.rds")
     }
+
+    # perform schedule munging that does not depend on UI
+    cal_sub <- cal_df %>%
+      tidyr::unnest(schedule_data) %>%
+      mutate(calendarId = 1) %>%
+      mutate(id = seq_len(dplyr::n())) %>%
+      mutate(raw = map2(title, categories, ~list(title = .x, categories = .y)))
     
     # reactive value for clicked schedule item
     schedule_click <- reactiveVal(NULL)
+
+    # reactive for source schedule data
+    cal_display_df <- reactiveVal(NULL)
+
+    # reactive for time zone selected
+    cal_prev_timezone <- reactiveVal(NULL)
 
     observeEvent(input$fancy, {
       schedule_click(input$fancy)
     })
 
     output$vid <- renderUI({
-      req(cal_processed())
+      #req(cal_processed())
       req(schedule_click())
 
-      video_id <- cal_processed() %>%
+      video_id <- cal_sub %>%
         dplyr::filter(id == schedule_click()$id) %>%
         tidyr::unnest(cols = videos_data) %>%
         dplyr::pull(videos_data)
@@ -145,7 +155,12 @@ mod_cal_viewer_server <- function(id){
       # _dates
     })
 
-    cal_processed <- reactive({
+    # on initial load, ensure calendar data matches user's time zone
+    observeEvent(session$userData$zone, {
+      message("entered zone observe")
+
+
+      # update choices for streamer selection input
       shiny::updateSelectInput(
         session = session,
         inputId = "streamer_select",
@@ -153,53 +168,90 @@ mod_cal_viewer_server <- function(id){
         selected = "all"
       )
 
-      cal_sub <- cal_df %>%
-              tidyr::unnest(schedule_data) %>%
-              mutate(calendarId = 1) %>%
-              mutate(id = seq_len(dplyr::n())) %>%
-              mutate(raw = map2(title, categories, ~list(title = .x, categories = .y)))
+      # set default in picker input to user's time zone
+      shinyWidgets::updatePickerInput(
+        session = session,
+        inputId = "time_zone",
+        choices = process_raw_timezones(),
+        selected = session$userData$zone()
+      )
 
-        return(cal_sub)
-    })
-
-    cal_display_df <- reactive({
-      req(cal_processed())
-      req(input$entry_color)
-      req(input$entry_font_color)
-     
-      # let the calendar render portion handle offsets / time conversion
-      # original time zone is America/New_York, so stick with that after parsing
-      new_zone <- "America/New_York"
-      
-      cal_sub2 <- cal_processed() %>%
+      # apply client time zone to schedule data
+      new_zone <- session$userData$zone()
+      cal_sub2 <- cal_sub %>%
         mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
         mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
-        select(., -videos_data, -start_time, -end_time, -category) %>%
-        mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
-        mutate(color = ifelse(is.na(color), input$entry_font_color, color))
+        select(., -videos_data, -start_time, -end_time, -category)
+
+      cal_display_df(cal_sub2)
+    })
+
+    observeEvent(input$time_zone, {
+      req(session$userData$zone())
+      req(cal_display_df())
       
-      if (input$streamer_select != "all") {
-        cal_sub2 <- cal_sub2 %>%
-          filter(user_id == input$streamer_select)
+      # on default render (when no choices have been updated), do nothing
+      if (input$time_zone == "nothing") return(NULL)
+
+      # update schedule data with new time zone
+      prev_zone <- session$userData$zone()
+
+      if (!is.null(cal_prev_timezone())) {
+        prev_zone <- cal_prev_timezone()
       }
 
-      return(cal_sub2)
+      # apply selected time zone to schedule data
+      if (input$time_zone != prev_zone) {
+
+        new_zone <- input$time_zone
+        cal_prev_timezone(new_zone)
+
+        cal_sub2 <- cal_display_df() %>%
+          mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = prev_zone, new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
+          mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = prev_zone, new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE)))
+
+        cal_display_df(cal_sub2)
+      }
     })
 
     # reactive for calendar object
     cal_display_obj <- reactive({
       req(cal_display_df())
       req(input$entry_color)
-      # process cal_df to conform to the proper structure
-      # coalesce(contains(dtstart()))
+      req(input$entry_font_color)
 
-      # `YYYY-MM-DD XX:YY:ZZ`
-      #browser()
+      # apply background and font colors to calendar entries
+      cal_tmp <- cal_display_df() %>%
+        mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
+        mutate(color = ifelse(is.na(color), input$entry_font_color, color))
+
+      # filter for selected streamers if not "all"
+      if (input$streamer_select != "nothing") {
+        if (input$streamer_select != "all") {
+          cal_tmp <- cal_display_df() %>%
+            filter(user_id == input$streamer_select)
+        }
+      }
+
+      cal_zone <- session$userData$zone()
+      offsetCalculator <- NULL
+
+      #----------------------------------------------------------------------------
+      # I tried this to get the current time shown on the calendar to match
+      # the selected time zone, but I am clearly doing it wrong
+      #----------------------------------------------------------------------------
+      # if (input$time_zone == "nothing") {
+      #   cal_zone <- session$userData$zone()
+      #   offsetCalculator <- NULL
+      # } else {
+      #   cal_zone <- input$time_zone
+      #   offsetCalculator <- 'function(timezoneName, timestamp){ return moment.tz.zone(timezoneName).utcOffset(timestamp); }'
+      # }
+
       my_id <- ns("fancy")
-
       toastui::calendar(
         #toastui::cal_demo_data(), 
-        cal_display_df(),
+        cal_tmp,
         view = input$cal_view,
         scheduleView = list('time'),
         useNavigation = TRUE,
@@ -213,11 +265,11 @@ mod_cal_viewer_server <- function(id){
           # - title
           cal = .,
           clickSchedule = JS(glue::glue('function(event) {console.log(event.schedule.id); Shiny.setInputValue("<<my_id>>", {raw: event.schedule.raw, id: event.schedule.id, x: event.event.clientX, y: event.event.clientY});}', .open = "<<", .close = ">>"))
-          #clickSchedule = JS("function(event) {alert(event.schedule.id);}")
         ) %>%
         cal_timezone(
-          timezoneName = input$time_zone,
-          displayLabel = NULL
+          timezoneName = cal_zone,
+          displayLabel = NULL,
+          offsetCalculator = offsetCalculator
         ) %>%
         cal_week_options(
           showTimezoneCollapseButton = TRUE,
@@ -251,7 +303,7 @@ mod_cal_viewer_server <- function(id){
       removeUI(selector = paste0("#", ns("custom_popup")))
       id <- as.numeric(input$fancy$id)
       # Get the appropriate line clicked
-      sched <- cal_processed()[cal_processed()$id == id, ]
+      sched <- cal_sub[cal_sub$id == id, ]
 
       start_time <- lubridate::as_datetime(sched$start) %>% hms::as_hms()  
       end_time <- lubridate::as_datetime(sched$end) %>% hms::as_hms()  
@@ -296,8 +348,6 @@ mod_cal_viewer_server <- function(id){
       removeUI(selector = paste0("#", ns("custom_popup")))
     })
   })
-
-
 }
     
 ## To be copied in the UI

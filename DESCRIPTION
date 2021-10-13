@@ -1,8 +1,9 @@
 Package: shinycal
-Title: PKG_TITLE
-Version: 0.6
-Authors@R: person('AUTHOR_FIRST', 'AUTHOR_LAST', email = 'AUTHOR@MAIL.COM', role = c('cre', 'aut'))
-Description: PKG_DESC.
+Title: The data science streamRs calendar
+Version: 0.7
+Authors@R: person('Eric', 'Nantz', email = 'thercast@gmail.com', role = c('cre', 'aut'))
+Description: A shiny application serving an interactive calendar for 
+  data science streams on various platforms such as Twitch.
 License: MIT + file LICENSE
 Imports: 
     calendar,

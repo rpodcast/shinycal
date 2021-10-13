@@ -14,9 +14,20 @@ app_ui <- function(request) {
       tabPanel(
         title = "Calendar",
         value = "calendar",
-        h1("The Data Science StreamRs Calendar!"),
-        shiny::includeMarkdown(app_sys("app", "www", "intro.md")),
-        mod_cal_viewer_ui("cal_viewer_ui_1")
+        HTML('<input type="text" id="clientTime" name="Client Time" style="display: none;"> '),
+        HTML('<input type="text" id="clientTimeOffset" name="Client timezone offset" style="display: none;"> '),
+        HTML('<input type="text" id="clientZone" name="Client zone" style="display: none;"> '),
+        fluidRow(
+          col_12(
+             h1("The Data Science StreamRs Calendar!"),
+            shiny::includeMarkdown(app_sys("app", "www", "intro.md")),
+          )
+        ),
+        fluidRow(
+          col_12(
+            mod_cal_viewer_ui("cal_viewer_ui_1")
+          )
+        )
       ),
       tabPanel(
         title = "Entry",

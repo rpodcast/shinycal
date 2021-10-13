@@ -23,20 +23,6 @@ app_ui <- function(request) {
             shiny::includeMarkdown(app_sys("app", "www", "intro.md")),
           )
         ),
-        # fluidRow(
-        #   col_4(
-        #     #textInput("clientTime", "Client Time", value = ""),
-        #     verbatimTextOutput("local")
-        #   ),
-        #   col_4(
-        #     #textInput("clientTimeOffset", "Client timezone offset", value = ""),
-        #     verbatimTextOutput("local2")
-        #   ),
-        #   col_4(
-        #     #textInput("clientZone", "Client zone", value = ""),
-        #     verbatimTextOutput("local3")
-        #   )
-        # ),
         fluidRow(
           col_12(
             mod_cal_viewer_ui("cal_viewer_ui_1")

@@ -6,6 +6,7 @@
 #' @noRd
 app_server <- function( input, output, session ) {
 
+  # obtain custom inputs derived from javascript time change function
   output$server <- renderText({ c("Server time:", as.character(Sys.time()), as.character(Sys.timezone())) })
   
   session$userData$time <- reactive({
@@ -20,17 +21,6 @@ app_server <- function( input, output, session ) {
     input$clientZone
   })
 
-  # output$local <- renderText({
-  #   session$userData$time()
-  # })
-
-  # output$local2 <- renderText({
-  #   session$userData$offset()
-  # })
-
-  # output$local3 <- renderText({
-  #   session$userData$zone()
-  # })
   # specific to shinylogs
   #shinylogs::track_usage(storage_mode = store_null())
   

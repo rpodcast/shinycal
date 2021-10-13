@@ -26,7 +26,7 @@ mod_cal_viewer_ui <- function(id){
         selectInput(
           ns("streamer_select"),
           label = "Streamer",
-          choices = c("all")
+          choices = c("nothing")
         )
       ),
       col_3(
@@ -41,7 +41,7 @@ mod_cal_viewer_ui <- function(id){
           ns("entry_font_color"),
           label = "Entry Font Color",
           palette = "limited",
-          value = "white",
+          value = "black",
           allowedCols = c("white", "black")
         )
       )
@@ -52,11 +52,7 @@ mod_cal_viewer_ui <- function(id){
           ns("time_zone"),
           label = "Select Time Zone",
           choices = c("nothing"),
-          #choices = process_raw_timezones(),
-          #selected = "America/New_York",
-          options = shinyWidgets::pickerOptions(
-            liveSearch = TRUE
-          )
+          options = shinyWidgets::pickerOptions(liveSearch = TRUE)
         )
       )
     ),
@@ -159,23 +155,6 @@ mod_cal_viewer_server <- function(id){
       # _dates
     })
 
-    # cal_processed <- reactive({
-    #   shiny::updateSelectInput(
-    #     session = session,
-    #     inputId = "streamer_select",
-    #     choices = c("all", cal_df$user_id),
-    #     selected = "all"
-    #   )
-
-    #   cal_sub <- cal_df %>%
-    #           tidyr::unnest(schedule_data) %>%
-    #           mutate(calendarId = 1) %>%
-    #           mutate(id = seq_len(dplyr::n())) %>%
-    #           mutate(raw = map2(title, categories, ~list(title = .x, categories = .y)))
-
-    #     return(cal_sub)
-    # })
-
     # on initial load, ensure calendar data matches user's time zone
     observeEvent(session$userData$zone, {
       message("entered zone observe")
@@ -227,7 +206,7 @@ mod_cal_viewer_server <- function(id){
 
       if (input$time_zone != prev_zone) {
         message("entered different zone")
-        
+
         new_zone <- input$time_zone
         cal_prev_timezone(new_zone)
 
@@ -239,45 +218,39 @@ mod_cal_viewer_server <- function(id){
       }
     })
 
-    # cal_display_df <- reactive({
-    #   req(cal_processed())
-    #   req(input$entry_color)
-    #   req(input$entry_font_color)
-     
-    #   # let the calendar render portion handle offsets / time conversion
-    #   # original time zone is America/New_York, so stick with that after parsing
-    #   #new_zone <- "America/New_York"
-    #   new_zone <- session$userData$zone()
-      
-    #   cal_sub2 <- cal_processed() %>%
-    #     mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
-    #     mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
-    #     select(., -videos_data, -start_time, -end_time, -category) %>%
-    #     mutate(bgColor = ifelse(is.na(bgColor), input$entry_color, bgColor)) %>%
-    #     mutate(color = ifelse(is.na(color), input$entry_font_color, color))
-      
-    #   if (input$streamer_select != "all") {
-    #     cal_sub2 <- cal_sub2 %>%
-    #       filter(user_id == input$streamer_select)
-    #   }
-
-    #   return(cal_sub2)
-    # })
-
     # reactive for calendar object
     cal_display_obj <- reactive({
       req(cal_display_df())
       req(input$entry_color)
-      # process cal_df to conform to the proper structure
-      # coalesce(contains(dtstart()))
+      cal_tmp <- cal_display_df()
 
-      # `YYYY-MM-DD XX:YY:ZZ`
-      #browser()
+      # filter for selected streamers if not "all"
+      if (input$streamer_select != "nothing") {
+        if (input$streamer_select != "all") {
+          cal_tmp <- cal_display_df() %>%
+            filter(user_id == input$streamer_select)
+        }
+      }
+
+      cal_zone <- session$userData$zone()
+      offsetCalculator <- NULL
+
+      #----------------------------------------------------------------------------
+      # I tried this to get the current time shown on the calendar to match
+      # the selected time zone, but I am clearly doing it wrong
+      #----------------------------------------------------------------------------
+      # if (input$time_zone == "nothing") {
+      #   cal_zone <- session$userData$zone()
+      #   offsetCalculator <- NULL
+      # } else {
+      #   cal_zone <- input$time_zone
+      #   offsetCalculator <- 'function(timezoneName, timestamp){ return moment.tz.zone(timezoneName).utcOffset(timestamp); }'
+      # }
+
       my_id <- ns("fancy")
-
       toastui::calendar(
         #toastui::cal_demo_data(), 
-        cal_display_df(),
+        cal_tmp,
         view = input$cal_view,
         scheduleView = list('time'),
         useNavigation = TRUE,
@@ -291,12 +264,11 @@ mod_cal_viewer_server <- function(id){
           # - title
           cal = .,
           clickSchedule = JS(glue::glue('function(event) {console.log(event.schedule.id); Shiny.setInputValue("<<my_id>>", {raw: event.schedule.raw, id: event.schedule.id, x: event.event.clientX, y: event.event.clientY});}', .open = "<<", .close = ">>"))
-          #clickSchedule = JS("function(event) {alert(event.schedule.id);}")
         ) %>%
         cal_timezone(
-          timezoneName = session$userData$zone(),
-          #timezoneName = input$time_zone,
-          displayLabel = NULL
+          timezoneName = cal_zone,
+          displayLabel = NULL,
+          offsetCalculator = offsetCalculator
         ) %>%
         cal_week_options(
           showTimezoneCollapseButton = TRUE,

@@ -108,8 +108,8 @@ mod_cal_viewer_server <- function(id){
 
       video_id <- cal_sub %>%
         dplyr::filter(id == schedule_click()$id) %>%
-        tidyr::unnest(cols = videos_data) %>%
-        dplyr::pull(videos_data)
+        tidyr::unnest(cols = video_data) %>%
+        dplyr::pull(video_data)
 
       js_snippet <- glue::glue("
       <script type='text/javascript'>
@@ -178,10 +178,11 @@ mod_cal_viewer_server <- function(id){
 
       # apply client time zone to schedule data
       new_zone <- session$userData$zone()
+      
       cal_sub2 <- cal_sub %>%
-        mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
-        mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%d %H:%M:%S", convert_to_char = TRUE))) %>%
-        select(., -videos_data, -start_time, -end_time, -category)
+        mutate(start = purrr::map_chr(start, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%dT%H:%M:%S", convert_to_char = TRUE))) %>%
+        mutate(end = purrr::map_chr(end, ~time_parser(.x, orig_zone = "America/New_York", new_zone = new_zone, format = "%Y-%m-%dT%H:%M:%S", convert_to_char = TRUE))) %>%
+        select(., -video_data, -start_time, -end_time, -category)
 
       cal_display_df(cal_sub2)
     })

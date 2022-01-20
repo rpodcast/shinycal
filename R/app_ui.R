@@ -34,6 +34,11 @@ app_ui <- function(request) {
         value = "entry",
         h1("Under Construction!")
         #mod_cal_entry_ui("cal_entry_ui_1")
+      ),
+      tabPanel(
+        title = "Feedback",
+        value = "feedback",
+        mod_feedback_ui("feedback_ui_1")
       )
     )
   )

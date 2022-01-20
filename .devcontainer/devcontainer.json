@@ -4,18 +4,36 @@
 	"name": "R",
 	"build": {
 		"dockerfile": "Dockerfile",
+		"args": {
+			"USERNAME": "${localEnv:USER}"
+		}
 	},
-	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
+	"runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined", "--env-file", ".devcontainer/.env" ],
 
 	// Add more local mounts to container
+	// The first mounts are for a local pulseaudio server on linux
+	// You can leave these commented out or delete if you are not linking the contianer to a linux sound system
 	"mounts": [
+		"source=/etc/alsa,target=/etc/alsa,type=bind,consistency=cached",
+		"source=/usr/share/alsa,target=/usr/share/alsa,type=bind,consistency=cached",
+		"source=/run/user/1000/pulse/native,target=/run/user/1000/pulse/native,type=bind,consistency=cached",
+		"source=/media/media_drive1/obs_files/audio_assets/soundboard_files,target=/soundboard_files,type=bind,consistency=cached",
 		"source=/opt/local/renv/cache,target=/renv/cache,type=bind,consistency=cached"
 	],
+	// Configure environment variables for audio sound server if needed
+	// You can leave these commented out or delete if you are not linking the contianer to a linux sound system
+	"containerEnv": {
+		"PULSE_SERVER": "unix:/run/user/1000/pulse/native"
+	},
 
 	// Set *default* container specific settings.json values on container create.
-	"settings": { 
-		//"terminal.integrated.shell.linux": "/bin/bash",
-		"terminal.integrated.shell.linux": "/usr/bin/fish",
+	"settings": {
+		"terminal.integrated.profiles.linux": {
+			"fish": {
+				"path": "/usr/bin/fish"
+			}
+		},
+		"terminal.integrated.defaultProfile.linux": "fish",
 		"r.alwaysUseActiveTerminal": true,
   		"r.bracketedPaste": true,
 		"r.sessionWatcher": true,
@@ -26,25 +44,39 @@
 		"r.autoDetect": "false",
 		"r.terminalPath": "/usr/local/bin/radian",
 		"r.interpreterPath": "/usr/local/bin/R",
-		"r.debugger.timeouts.startup": 8000
+		"r.debugger.timeouts.startup": 8000,
+		"editor.wordWrap": "on",
+		"editor.tabSize": 2,
+		"path-autocomplete.pathMappings": {
+    			"/": "/",
+    			"./": "${folder}"
+		},
+		"editor.bracketPairColorization.enabled": true,
+		"editor.guides.bracketPairs": "active"
 	},
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ikuyadeu.r",
 		//"/renv/cache/r-latest.vslx",
-		//"mikhail-arkhipov.r",
-		//"REditorSupport.r-lsp",
+		"ionutvmi.path-autocomplete",
+		"usernamehw.errorlens",
+		"mhutchie.git-graph",
+		"wayou.vscode-todo-highlight",
+		"tomoki1207.pdf",
+		"DavidAnson.vscode-markdownlint",
 		"Rubymaniac.vscode-paste-and-indent",
 		"GrapeCity.gc-excelviewer",
+		"IBM.output-colorizer",
 		"Mohamed-El-Fodil-Ihaddaden.shinysnip",
 		"hediet.vscode-drawio",
 		"MS-vsliveshare.vsliveshare-pack",
 		"ms-python.python",
 		"RDebugger.r-debugger",
+		//"GitHub.copilot",
 		"eamodio.gitlens",
-		"GitHub.copilot"
-		
+		"GitHub.vscode-pull-request-github",
+		"hoovercj.vscode-power-mode"
 	]
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.

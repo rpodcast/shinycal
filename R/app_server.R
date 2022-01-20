@@ -27,4 +27,5 @@ app_server <- function( input, output, session ) {
   # Your application server logic 
   mod_cal_viewer_server("cal_viewer_ui_1")
   #mod_cal_entry_server("cal_entry_ui_1")
+  mod_feedback_server("feedback_ui_1")
 }

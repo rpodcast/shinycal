@@ -1,3 +1,7 @@
+# shinycal 0.8
+
+* Add a feedback Shiny module so users can easily report issues with using the app directly on GitHub via the `gh` package. Credit to @shannonpileggi for the idea!
+
 # shinycal 0.7
 
 * Add custom javascript for detecting the time zone of the user browsing the app, and make that the default time zone when application finishes loading. This solves the bug of time zones not being correctly mapped for those outside of the original America/New_York time zone (#26)

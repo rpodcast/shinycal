@@ -8,3 +8,4 @@ DESCRIPTION
 NAMESPACE
 NEWS.md
 README.md
+.Renviron

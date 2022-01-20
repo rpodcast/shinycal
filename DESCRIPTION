@@ -28,7 +28,8 @@ Imports:
     colourpicker,
     shinyWidgets,
     rvest,
-    shinyvalidate
+    shinyvalidate,
+    gh
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1

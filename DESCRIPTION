@@ -1,6 +1,6 @@
 Package: shinycal
 Title: The data science streamRs calendar
-Version: 0.7
+Version: 0.8
 Authors@R: person('Eric', 'Nantz', email = 'thercast@gmail.com', role = c('cre', 'aut'))
 Description: A shiny application serving an interactive calendar for 
   data science streams on various platforms such as Twitch.

@@ -1,6 +1,6 @@
 default:
   golem_name: shinycal
-  golem_version: 0.4
+  golem_version: 0.8
   app_prod: no
   cal_host: "nextcloud.r-podcastdev.link"
   cal_base_url: "https://nextcloud.r-podcastdev.link/remote.php/dav/calendars/shinycal"
